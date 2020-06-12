@@ -1,0 +1,14 @@
+{
+    "Source": {
+        "dbname": "mydb",
+        "name": "pgsqlDb",
+        "opts": "sslmode=disable",
+        "table": "mytable"
+    },
+    "Destination": {
+        "dbname": "mydb",
+        "name": "mysqlDb",
+        "opts": "autocommit=true",
+        "table": "mytable"
+    }
+}

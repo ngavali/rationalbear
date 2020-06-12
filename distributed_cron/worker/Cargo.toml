@@ -1,0 +1,14 @@
+[package]
+name = "worker"
+version = "0.1.0"
+authors = ["ngavali <gavali.nilesh80186@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+postgres="0.17.3"
+postgres-openssl="0.3.0"
+openssl = "*"
+log = "0.4.8"
+libc = "0.2.17"
