@@ -1,0 +1,19 @@
+{
+    "chroot": "/containerfs",
+    "hostname": "my-container",
+    "mount_bindings": [
+        {
+            "read_only": true,
+            "source": "/mounts/readonly/",
+            "target": "/containerfs/mp"
+        }
+    ],
+    "program": {
+        "args": [],
+        "executable": "/bin/bash"
+    },
+    "user_map": {
+        "gid": 1000,
+        "uid": 1000
+    }
+}
