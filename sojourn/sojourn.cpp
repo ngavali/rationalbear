@@ -10,6 +10,58 @@
 #include <thread>
 #include <shared_mutex>
 #include <map>
+#include <vector>
+
+const int MAX_CONNECTIONS = 2;
+
+class ThreadNg {
+    bool busy;
+    std::thread thread_handle;
+    public:
+
+    ThreadNg() {
+        busy = false;
+        printf("Worker created...\n");
+    }
+
+    bool Status() {
+        return busy;
+    }
+
+    template<class F, class... Args>
+        void thread_wrapper(F&& user_function, Args&&... args) {
+            printf("function started...\n");
+            user_function(std::ref(args)...);
+            printf("function ended...\n");
+            busy = false;
+        }
+
+    template<class F, class... Args>
+        void Run(F&& f, Args&&... args) {
+            busy = true;
+            thread_handle = std::thread( &ThreadNg::thread_wrapper<typename std::decay<F>::type,
+                    typename std::decay<Args>::type...>,  
+                    this,
+                    std::forward<F>(f),
+                    std::forward<Args>(args)... );
+        }
+
+    void Join() {
+        if ( thread_handle.joinable() )
+            thread_handle.join();
+        else
+            printf("Nothing to wait for...\n");
+    }
+
+    ~ThreadNg() {
+        printf("In the destructor...\n");
+        if ( thread_handle.joinable() )
+            thread_handle.join();
+        else
+            printf("Nothing to wait for...\n");
+        printf("Worker destroyed...\n");
+    }
+};
 
 std::shared_mutex KeyValueStoreRWLock;
 
@@ -19,7 +71,7 @@ struct cmp_str {
     }
 };
 
-std::map<const char *, const char *, cmp_str> keyValueStore;
+static std::map<const char *, const char *, cmp_str> keyValueStore;
 
 const char *get_from_keyValueStore(const char *key) {
     std::shared_lock<std::shared_mutex> shared_read(KeyValueStoreRWLock);
@@ -71,71 +123,79 @@ void handle_connection(int &clientSocket) {
         memset(key, 0x00, 256);
         memset(val, 0x00, 256);
 
-        int bytesRecv = recv(clientSocket, buf, 4096, 0);
-        if (bytesRecv == -1) {
-            std::cerr << "Connection issue." << std::endl;
-            break;
-        }
-        if (bytesRecv == 0) {
-            std::cout << "The client disconnected" << std::endl;
-            break;
-        }
-
-        pk = 0;
-        k = 0;
-        iteration = 0;
-
-        for (int i = 0; i < bytesRecv && iteration < 3; i++) {
-            if (k > 255) {
-                printf("Key size exceeded...");
+        try {
+            int bytesRecv = recv(clientSocket, buf, 4096, 0);
+            if (bytesRecv == -1) {
+                std::cerr << "Connection issue." << std::endl;
                 break;
             }
-            if (buf[i] == ' ' || buf[i] == '\r') {
-                switch (iteration) {
-                    case 0:
-                        strncpy(command, (const char *)(buf + pk), k);
-                        break;
-                    case 1:
-                        strncpy(key, (const char *)(buf + pk), k);
-                        break;
-                    case 2:
-                        strncpy(val, (const char *)(buf + pk), k);
-                        break;
+            if (bytesRecv == 0) {
+                std::cout << "The client disconnected" << std::endl;
+                break;
+            }
+
+            pk = 0;
+            k = 0;
+            iteration = 0;
+
+            for (int i = 0; i < bytesRecv && iteration < 3; i++) {
+                if (k > 255) {
+                    printf("Key size exceeded...");
+                    break;
                 }
-                iteration++;
-                pk += k + 1;
-                k = 0;
-            } else {
-                k++;
+                if (buf[i] == ' ' || buf[i] == '\r') {
+                    switch (iteration) {
+                        case 0:
+                            strncpy(command, (const char *)(buf + pk), k);
+                            break;
+                        case 1:
+                            strncpy(key, (const char *)(buf + pk), k);
+                            break;
+                        case 2:
+                            strncpy(val, (const char *)(buf + pk), k);
+                            break;
+                    }
+                    iteration++;
+                    pk += k + 1;
+                    k = 0;
+                } else {
+                    k++;
+                }
             }
-        }
 
-        if (strcmp(command, "exit\0") == 0 || strcmp(command, "quit\0") == 0) {
-            repl = false;
-            break;
-        }
-
-        if (strcmp(command, "DEL\0") == 0 || strcmp(command, "del\0") == 0) {
-            if (erase_from_keyValueStore(key)) {
-                char message[9] = "Del Ok";
-                send(clientSocket, strcat(message, "\r\n"), strlen(message) + 3, 0);
+            if (strcmp(command, "exit\0") == 0 || strcmp(command, "quit\0") == 0) {
+                repl = false;
+                break;
             }
-        }
 
-        if (strcmp(command, "GET\0") == 0 || strcmp(command, "get\0") == 0) {
-            const char *value = get_from_keyValueStore(key);
-            if (value != NULL) {
-                char message[264] = "Value=";
-                strcpy(message, value);
-                send(clientSocket, strcat(message, "\r\n"), strlen(message) + 3, 0);
+            if (strcmp(command, "DEL\0") == 0 || strcmp(command, "del\0") == 0) {
+                if (erase_from_keyValueStore(key)) {
+                    char message[9] = "Del Ok";
+                    send(clientSocket, strcat(message, "\r\n"), strlen(message) + 3, 0);
+                }
             }
-        }
 
-        if (strcmp(command, "ADD\0") == 0 || strcmp(command, "add\0") == 0) {
-            if (add_to_keyValueStore(key, val)) {
-                char message[9] = "Add Ok";
-                send(clientSocket, strcat(message, "\r\n"), strlen(message) + 3, 0);
+            if (strcmp(command, "GET\0") == 0 || strcmp(command, "get\0") == 0) {
+                const char *value = get_from_keyValueStore(key);
+                if (value != NULL) {
+                    char message[264];
+                    strcpy(message, "Value=");
+                    strcat(message, value);
+                    send(clientSocket, strcat(message, "\r\n"), strlen(message) + 3, 0);
+                    printf("Bytes sent : %zd message = %s\n", strlen(message), message);
+                }
             }
+
+            if (strcmp(command, "SET\0") == 0 || strcmp(command, "set\0") == 0) {
+                if (add_to_keyValueStore(key, val)) {
+                    char message[9] = "Set Ok";
+                    send(clientSocket, strcat(message, "\r\n"), strlen(message) + 3, 0);
+                    printf("Bytes added : %zd\n", strlen(val));
+                }
+            }
+
+        } catch (std::exception &e) {
+            std::cout << "exception : " << e.what() << std::endl;
         }
     }
 
@@ -147,6 +207,9 @@ void handle_connection(int &clientSocket) {
 }
 
 int main() {
+
+    ThreadNg ThreadNgCollection[MAX_CONNECTIONS];
+    int activeThreads = 0;
 
     int listening = socket(AF_INET, SOCK_STREAM, 0);
     if (listening == -1) {
@@ -177,6 +240,7 @@ int main() {
     bool forever = true;
     size_t connections = 0;
 
+    int thread_num = 0;
     while (forever) {
         int *clientSocket = new int;
         *clientSocket = accept(listening, (sockaddr *)&client, &clientSize);
@@ -202,8 +266,34 @@ int main() {
                 << std::endl;
         }
 
-        std::thread(&handle_connection, std::ref(*clientSocket)).detach();
-        std::cout << "Total connections : " << connections << std::endl;
+        int handled = false;
+        int attempts = 0;
+
+        while ( attempts<2*MAX_CONNECTIONS ) {
+            if ( !ThreadNgCollection[thread_num].Status() ) {
+                ThreadNgCollection[thread_num].Join();
+                printf("Assigning job to thread : %d\n", thread_num);
+                ThreadNgCollection[thread_num].Run(handle_connection, std::ref(*clientSocket));
+                handled = true;
+                break;
+            }
+            thread_num=(thread_num+1)%MAX_CONNECTIONS;
+            attempts++;
+        }
+
+        if (!handled) {
+            printf("Too many client connections...\n");
+            close(*clientSocket);
+            delete clientSocket;
+        }
+
+        activeThreads=0;
+        for( auto& i : ThreadNgCollection ) {
+            if (i.Status()) 
+                activeThreads++;
+        }
+        std::cout << "Total  connections : " << connections << std::endl;
+        std::cout << "Active connections : " << activeThreads << std::endl;
     }
 
     close(listening);
