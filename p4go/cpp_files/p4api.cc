@@ -58,12 +58,14 @@ void p4lib::run(int argc, char** argv)
     dropped();
     client.SetArgv( argc - 1, argv + 1);
     client.Run(argv[0], &ui);
+    //Capture command output
     msg = ui.MyData();
 }
 
 StrBuf p4lib::message() 
 {
     StrBuf msg = ui.MyData();
+    //ui.Clear();
     return msg;
 }
 
@@ -135,7 +137,12 @@ void Connect(P4Client p4client)
 
 void Run(P4Client p4client, int argc, char **message, char **argv) 
 {
+    // Run the command
     static_cast<p4lib*>(p4client)->run(argc, argv);
+    //Capture command output
+    StrBuf msg = static_cast<p4lib*>(p4client)->message();
+    char* tmp = (char*) malloc(strlen(msg.Text()) * sizeof(char) + 1);
+    *message = strcpy(tmp, msg.Text());
 }
 
 void Message(P4Client p4client) 
