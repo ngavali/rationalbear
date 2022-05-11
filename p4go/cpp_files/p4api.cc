@@ -7,14 +7,13 @@
 
 using namespace std;
 
-extern "C" char* RunCmd(int argc, char **argv);
-
 class p4lib
 {
     MyClientUser ui;
     ClientApi client;
     StrBuf msg;
     Error e;
+    int drop = 0;
     public: 
     void init();
     void connect();
@@ -23,27 +22,49 @@ class p4lib
     StrBuf message();
     Error error();
     void final();
+    int dropped();
+    void clear();
 };
+
+int p4lib::dropped() {
+    drop++;
+    int is_dropped = client.Dropped();
+    return is_dropped;
+}
 
 void p4lib::init() 
 {
-	P4Libraries::Initialize( P4LIBRARIES_INIT_ALL, &e );
+    P4Libraries::Initialize( P4LIBRARIES_INIT_ALL, &e );
+    if( e.Test() )
+    {
+        e.Fmt( &msg );
+        fprintf( stderr, "0001 : %s\n", msg.Text() );
+    }
 }
 
 void p4lib::connect() 
 {
+    dropped();
     client.Init( &e );
+    if( e.Test() )
+    {
+        e.Fmt( &msg );
+        fprintf( stderr, "0002 %s\n", msg.Text() );
+    }
 }
 
 void p4lib::run(int argc, char** argv)
 {
+    dropped();
     client.SetArgv( argc - 1, argv + 1);
     client.Run(argv[0], &ui);
+    msg = ui.MyData();
 }
 
 StrBuf p4lib::message() 
 {
-    return ui.MyData();
+    StrBuf msg = ui.MyData();
+    return msg;
 }
 
 Error p4lib::error() 
@@ -53,71 +74,91 @@ Error p4lib::error()
 
 void p4lib::final() 
 {
+    dropped();
     client.Final(&e);
+    if( e.Test() )
+    {
+        e.Fmt( &msg );
+        fprintf( stderr, "0003 %s\n", msg.Text() );
+    }
 }
 
 void p4lib::disconnect() 
 {
-	P4Libraries::Shutdown( P4LIBRARIES_INIT_ALL, &e );
+    dropped();
+    P4Libraries::Shutdown( P4LIBRARIES_INIT_ALL, &e );
+    if( e.Test() )
+    {
+        e.Fmt( &msg );
+        fprintf( stderr, "0004 %s\n", msg.Text() );
+    }
 }
 
-char* RunCmd(int argc, char **argv)
+void p4lib::clear()
 {
-    StrBuf msg;
-    Error e;
+    ui.Clear();
+    message();
+}
 
-    p4lib* p4 = new p4lib;
+/*
+ * Wrapper for C
+ */
 
-	p4->init();
 
-    e = p4->error();
-	if( e.Test() )
-	{
-	    e.Fmt( &msg );
-	    fprintf( stderr, "%s\n", msg.Text() );
-	    return msg.Text();
-	}
+typedef void* P4Client;
 
-	// Connect to server
+extern "C" P4Client NewP4Client();
+extern "C" void Initialize(P4Client);
+extern "C" void Connect(P4Client);
+extern "C" void Run(P4Client, int, char**, char**);
+extern "C" void Message(P4Client);
+extern "C" void Final(P4Client);
+extern "C" void Disconnect(P4Client ) ;
+extern "C" void Clear(P4Client ) ;
+extern "C" int  Dropped(P4Client ) ;
 
-	p4->connect();
+P4Client NewP4Client() 
+{
+    p4lib* P4Lib = new p4lib;
+    return (void*) P4Lib;
+}
 
-    e = p4->error();
-	if( e.Test() )
-	{
-	    e.Fmt( &msg );
-	    fprintf( stderr, "%s\n", msg.Text() );
-	    return msg.Text();
-	}
+void Initialize(P4Client p4client) 
+{
+    static_cast<p4lib*>(p4client)->init();
+}
 
-	// Run the command
-    p4->run(argc, argv);
+void Connect(P4Client p4client)
+{
+    static_cast<p4lib*>(p4client)->connect();
+}
 
-    //Capture command output
-    char * message = (char*) malloc(strlen(p4->message().Text()) * sizeof(char) + 1);
-    message = strcpy(message , p4->message().Text());
+void Run(P4Client p4client, int argc, char **message, char **argv) 
+{
+    static_cast<p4lib*>(p4client)->run(argc, argv);
+}
 
-	// Close connection
+void Message(P4Client p4client) 
+{
+    cout << "==Message==\n" << static_cast<p4lib*>(p4client)->message().Text() << endl;
+}
 
-	p4->final();
+void Final(P4Client p4client) 
+{
+    static_cast<p4lib*>(p4client)->final();
+}
 
-    e = p4->error();
-	if( e.Test() )
-	{
-	    e.Fmt( &msg );
-	    fprintf( stderr, "%s\n", msg.Text() );
-	    return msg.Text();
-	}
+void Disconnect(P4Client p4client) 
+{
+    static_cast<p4lib*>(p4client)->disconnect();
+}
 
-    p4->disconnect();
+void Clear(P4Client p4client) 
+{
+    static_cast<p4lib*>(p4client)->clear();
+}
 
-    e = p4->error();
-	if( e.Test() )
-	{
-	    e.Fmt( &msg );
-	    fprintf( stderr, "%s\n", msg.Text() );
-	    return msg.Text();
-	}
-	
-	return message;
+int Dropped(P4Client p4client)
+{
+    return static_cast<p4lib*>(p4client)->dropped();
 }

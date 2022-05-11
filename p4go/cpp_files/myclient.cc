@@ -25,6 +25,7 @@ class MyClientUser : public ClientUser
     StrBuf MyData();
     void OutputInfo( char , const char * );
     void Message( Error *);
+    void Clear();
 };
 
 void MyClientUser::OutputText( const char *data, int length )
@@ -64,4 +65,9 @@ void MyClientUser::Message( Error *err )
     err->Fmt( buf, EF_NEWLINE );
     my_output.Append( buf.Text() );
     //cout << "MyClientUser::Message\n" << my_output.Text() << endl;
+}
+
+void MyClientUser::Clear()
+{
+    my_output.Clear();
 }

@@ -3,7 +3,7 @@ package main
 /*
 #cgo CFLAGS: -I./cpp_files
 #cgo LDFLAGS: -L./libs -lp4go
-#include "c_for_go.h"
+#include "p4api.h"
 #include <stdlib.h>
 */
 import "C"
@@ -25,9 +25,29 @@ func main() {
 			argv[i] = cs
 		}
 
-		res := C.RunCmd(C.int(argc), &argv[0])
-		defer C.free(unsafe.Pointer(res))
+		var msg *C.char
+		defer C.free(unsafe.Pointer(msg))
 
-		fmt.Printf("%s", C.GoString(res))
+		P4Client := C.NewP4Client()
+		C.Initialize(P4Client)
+		C.Connect(P4Client)
+		C.Run(P4Client, C.int(argc), &msg, &argv[0])
+		C.Message(P4Client)
+		C.Clear(P4Client)
+
+		fmt.Printf("Dropped: %d\n", C.Dropped(P4Client))
+		msg = C.CString("")
+		C.Run(P4Client, C.int(argc), &msg, &argv[0])
+		C.Message(P4Client)
+		C.Clear(P4Client)
+
+		fmt.Printf("Dropped: %d\n", C.Dropped(P4Client))
+		msg = C.CString("")
+		C.Run(P4Client, C.int(argc), &msg, &argv[0])
+		C.Message(P4Client)
+		C.Clear(P4Client)
+
+		C.Final(P4Client)
+		C.Disconnect(P4Client)
 	}
 }

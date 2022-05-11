@@ -22,4 +22,5 @@ class MyClientUser : public ClientUser
     StrBuf MyData();
     void OutputInfo( char , const char * );
     void Message( Error *);
+    void Clear();
 };
