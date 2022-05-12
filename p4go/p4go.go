@@ -10,8 +10,19 @@ import "C"
 import (
 	"fmt"
 	"os"
+	"time"
 	"unsafe"
 )
+
+func RunPerforceCommand(P4Client C.P4Client, argc C.int, msg *C.char, argv []*C.char) C.int {
+	C.Initialize(P4Client)
+	C.Connect(P4Client)
+	C.Run(P4Client, C.int(argc), &msg, &argv[0])
+	C.Message(P4Client)
+	C.Clear(P4Client)
+	fmt.Printf("DROPPED := %d\n", C.Dropped(P4Client))
+	return C.Dropped(P4Client)
+}
 
 func main() {
 	args := os.Args
@@ -28,26 +39,28 @@ func main() {
 		var msg *C.char
 		defer C.free(unsafe.Pointer(msg))
 
-		P4Client := C.NewP4Client()
-		C.Initialize(P4Client)
-		C.Connect(P4Client)
-		C.Run(P4Client, C.int(argc), &msg, &argv[0])
-		C.Message(P4Client)
-		C.Clear(P4Client)
+		var P4Client C.P4Client
+		P4Client = C.NewP4Client()
+		dropped := RunPerforceCommand(P4Client, C.int(argc), msg, argv)
 
-		fmt.Printf("Dropped: %d\n", C.Dropped(P4Client))
-		msg = C.CString("")
-		C.Run(P4Client, C.int(argc), &msg, &argv[0])
-		C.Message(P4Client)
-		C.Clear(P4Client)
+		time.Sleep(5 * time.Second)
+		if dropped == 1 {
+			fmt.Println("==New connection")
+			C.Final(P4Client)
+			C.Disconnect(P4Client)
+			P4Client = C.NewP4Client()
+		}
+		dropped = RunPerforceCommand(P4Client, C.int(argc), msg, argv)
 
-		fmt.Printf("Dropped: %d\n", C.Dropped(P4Client))
-		msg = C.CString("")
-		C.Run(P4Client, C.int(argc), &msg, &argv[0])
-		C.Message(P4Client)
-		C.Clear(P4Client)
+		time.Sleep(5 * time.Second)
+		if dropped == 1 {
+			fmt.Println("==New connection")
+			C.Final(P4Client)
+			C.Disconnect(P4Client)
+			P4Client = C.NewP4Client()
+		}
 
-		C.Final(P4Client)
-		C.Disconnect(P4Client)
+		RunPerforceCommand(P4Client, C.int(argc), msg, argv)
+
 	}
 }

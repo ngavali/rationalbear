@@ -1,11 +1,12 @@
 #include <cstdio>
 #include <iostream>
 
-//# include "clientapi.h"
 # include "myclient.h"
 # include "p4libs.h"
 
 using namespace std;
+
+extern "C" int RunCmd(int , char **, char **);
 
 class p4lib
 {
@@ -44,7 +45,7 @@ void p4lib::init()
 
 void p4lib::connect() 
 {
-    dropped();
+    //dropped();
     client.Init( &e );
     if( e.Test() )
     {
@@ -122,7 +123,7 @@ extern "C" int  Dropped(P4Client ) ;
 P4Client NewP4Client() 
 {
     p4lib* P4Lib = new p4lib;
-    return (void*) P4Lib;
+    return P4Lib;
 }
 
 void Initialize(P4Client p4client) 
