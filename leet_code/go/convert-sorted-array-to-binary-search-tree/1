@@ -1,0 +1,21 @@
+package main
+
+import (
+	"bytes"
+	"testing"
+)
+
+func TestSortedArrayToBST(t *testing.T) {
+	input := []int{-10, -3, 0, 5, 9}
+	want := `-10
+-3
+0
+5
+9
+`
+	got := &bytes.Buffer{}
+	DFS_inorder(sortedArrayToBST(input), got)
+	if got.String() != want {
+		t.Errorf("Input: %+v, want='%s', got='%s'\n", input, want, got)
+	}
+}
