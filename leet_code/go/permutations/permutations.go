@@ -2,30 +2,40 @@ package main
 
 import "fmt"
 
-func permutate(nums []int) {
-	if len(nums) > 0 {
-		//		fmt.Printf("%+v\n", nums)
-		return
-		for i := 0; i < len(nums); i++ {
-			permutate(append(nums[:i], nums[i+1:]...))
-		}
-	}
-}
-
 func permute(nums []int) [][]int {
 
-	res := [][]int{}
-	fmt.Println(nums)
+    if len(nums) == 1 {
+        return [][]int{nums}
+    }
 
-	for i := 0; i < len(nums); i++ {
-		fmt.Printf("%+v: %d,%d %+v\n", nums, i, i+1, append(nums[:i], nums[i+1:]...))
-		permutate(append(nums[:i], nums[i+1:]...))
-	}
+    res := [][]int{}
+    if len(nums) == 2 {
+        
+        res = append(append(res, nums), []int{nums[1], nums[0]})
 
-	return res
+    } else {
 
+        for i := 0; i < len(nums); i++ {
+
+            subset := make([]int, len(nums))
+            copy(subset, nums)
+            key := subset[i]
+            for _, val := range permute(append(subset[:i], subset[i+1:]...)) {
+                res = append(res, append(val, key))
+            }
+
+        }
+
+    }
+
+    return res
 }
 
 func main() {
-	fmt.Println(permute([]int{1, 2, 3}))
+
+    nums := []int{1, 2, 3}
+    //nums := []int{1, 2, 3, 4}
+    //nums := []int{0}
+    //nums := []int{0,1}
+    fmt.Println(permute(nums))
 }
