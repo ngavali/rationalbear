@@ -1,0 +1,46 @@
+package main
+
+import "fmt"
+
+func lengthOfLongestSubstring(s string) int {
+
+    //alpha_map := make([]byte,26,26)
+    if len(s) < 2 {
+        return len(s)
+    }
+    char_map := make(map[byte]int)
+    start := 0
+    end := 0
+    max_len := 0
+    str_len := len(s)
+
+    for end < str_len {
+        if idx, ok := char_map[s[end]] ; ok {
+            start = idx+1
+        if max_len < end - start {
+            fmt.Println(start, end, s[start:end])
+            max_len = end - start + 1
+        }
+            i := 0
+            for i < start {
+                delete(char_map, s[i])
+                i++
+            }
+        }
+        char_map[s[end]] = end
+        end++
+    }
+    return max_len
+}
+
+func main() {
+    fmt.Println(lengthOfLongestSubstring("abcabcbb"))
+    /*
+    fmt.Println(lengthOfLongestSubstring("bbbbb"))
+    fmt.Println(lengthOfLongestSubstring("pwwkew"))
+    fmt.Println(lengthOfLongestSubstring("abba"))
+    fmt.Println(lengthOfLongestSubstring(" "))
+    fmt.Println(lengthOfLongestSubstring(""))
+    fmt.Println(lengthOfLongestSubstring("tmmzuxt"))
+    */
+}
