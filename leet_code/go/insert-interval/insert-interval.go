@@ -18,18 +18,37 @@ func maxOf(x, y int) int {
 
 func insert(intervals [][]int, newInterval []int) [][]int {
 
+	if len(intervals) == 0 {
+		return append(intervals, newInterval)
+	}
 	start := newInterval[0]
-	N := len(intervals) - 1
-	var final [][]int
+	//N := len(intervals) - 1
+
+	insert_location := 0
+
 	for i := range intervals {
-		if start >= intervals[N-i][0] {
-			final = make([][]int, len(intervals[:N-i+1]))
-			copy(final, intervals[:N-i+1])
-			final = append(final, newInterval)
-			final = append(final, intervals[N-i+1:]...)
-			break
+		if start > intervals[i][0] {
+			insert_location = i + 1
+			fmt.Println(start, intervals[i][0], insert_location)
 		}
 	}
+
+	final := make([][]int, len(intervals[:insert_location]))
+	copy(final, intervals[:insert_location])
+	final = append(final, newInterval)
+	final = append(final, intervals[insert_location:]...)
+	fmt.Println(final, intervals)
+	/*
+		for i := range intervals {
+			if start > intervals[N-i][0] {
+				fmt.Println(final, intervals)
+				final = make([][]int, len(intervals[:N-i+1]))
+				copy(final, intervals[:N-i+1])
+				final = append(final, newInterval)
+				final = append(final, intervals[N-i+1:]...)
+				break
+			}
+		}*/
 
 	i := 0
 	for i < len(final)-1 {
@@ -51,6 +70,8 @@ func insert(intervals [][]int, newInterval []int) [][]int {
 }
 
 func main() {
+	fmt.Println("FINAL=", insert([][]int{{1, 5}}, []int{0, 3}))
+	fmt.Println("FINAL=", insert([][]int{}, []int{5, 7}))
 	fmt.Println("FINAL=", insert([][]int{{1, 3}, {6, 9}}, []int{2, 5}))
 	fmt.Println("FINAL=", insert([][]int{{1, 3}, {6, 9}}, []int{4, 5}))
 	fmt.Println("FINAL=", insert([][]int{{1, 2}, {3, 5}, {6, 7}, {8, 10}, {12, 16}}, []int{4, 8}))
