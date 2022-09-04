@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 var charMap = make([]int, 256)
 func _lengthOfLongestSubstring(s string) int {
 
@@ -44,15 +42,4 @@ func lengthOfLongestSubstring(s string) int {
     }
 
     return maxLen
-}
-
-func main() {
-	fmt.Println(lengthOfLongestSubstring("au"))
-	fmt.Println(lengthOfLongestSubstring(" "))
-	fmt.Println(lengthOfLongestSubstring("abcabcbb"))
-	fmt.Println(lengthOfLongestSubstring("bbbbb"))
-	fmt.Println(lengthOfLongestSubstring("pwwkew"))
-	fmt.Println(lengthOfLongestSubstring("abba"))
-	fmt.Println(lengthOfLongestSubstring(""))
-	fmt.Println(lengthOfLongestSubstring("tmmzuxt"))
 }
