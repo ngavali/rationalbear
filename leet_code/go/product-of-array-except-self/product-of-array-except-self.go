@@ -25,30 +25,38 @@ func productExceptSelf(nums []int) []int {
 func productExceptSelf(nums []int) []int {
     product := 1
     countZeroes := 0
-    for _, n := range nums {
-        if n != 0 {
-            product *= n
+    i := 0
+    N := len(nums)
+    for i<N {
+        if nums[i] != 0 {
+            product *= nums[i]
         } else {
             countZeroes++
+            if countZeroes > 1 {
+                return make([]int, N)
+            }
         }
-        if countZeroes > 1 {
-            return make([]int, len(nums))
+        if countZeroes == 1 {
+            nums[i] = 0
         }
+        i++
     }
+    i = 0
     if countZeroes > 0 {
-        for i, n := range nums {
-            if n == 0 {
+        for i<N {
+            if nums[i] == 0 {
                 nums[i] = product
+                break
             } else {
                 nums[i] = 0
             }
+            i++
         }
-        return nums
     } else {
-        for i, n := range nums {
-            if n != 0 {
-                nums[i] = product/n
-            }
+        i = 0
+        for i<N {
+            nums[i] = product/nums[i]
+            i++
         }
     }
     return nums
