@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 )
 
 type TreeNode struct {
@@ -15,7 +16,6 @@ func validateBSTWithPointer(root, l, r *TreeNode) bool {
 	if root == nil {
 		return true
 	}
-
 	if l != nil && root.Val <= l.Val {
 		return false
 	}
@@ -49,35 +49,37 @@ func validateBST(root *TreeNode, min, max int) bool {
 	if root == nil {
 		return true
 	}
-	if root.Val < min || root.Val > max {
+	if root.Val <= min || root.Val >= max {
 		return false
 	}
-
-	return validateBST(root.Left, min, root.Val-1) && validateBST(root.Right, root.Val+1, max)
+	return validateBST(root.Left, min, root.Val) && validateBST(root.Right, root.Val, max)
 
 }
 
-func _isValidBST(root *TreeNode) bool {
-
-	//return validateBST(root, math.MinInt, math.MaxInt)
+func isValidBST(root *TreeNode) bool {
+	return validateBST(root, math.MinInt, math.MaxInt)
 	//return validateBSTWithPointer(root, nil, nil)
-	return validateBSTWithDFSInOrder(root, nil)
+	//return validateBSTWithDFSInOrder(root, nil)
+    /*
+    prev = nil
+    return isValidBSTUtil(root)
+    */
 }
 
 var prev *TreeNode = nil
 
-func isValidBST(root *TreeNode) bool {
+func isValidBSTUtil(root *TreeNode) bool {
 
 	if root != nil {
 
-		if !isValidBST(root.Left) {
+		if !isValidBSTUtil(root.Left) {
 			return false
 		}
 		if prev != nil && root.Val <= prev.Val {
 			return false
 		}
 		prev = root
-		return isValidBST(root.Right)
+		return isValidBSTUtil(root.Right)
 
 	}
 
