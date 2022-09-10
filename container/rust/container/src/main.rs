@@ -21,39 +21,41 @@
    ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE.
-*/
+   */
 
-extern crate libc;
+//extern crate libc;
+//extern crate serde;
 use libc::{
     CLONE_NEWIPC, CLONE_NEWNET, CLONE_NEWNS, CLONE_NEWPID, CLONE_NEWUSER, CLONE_NEWUTS, SIGCHLD,
 };
-use rustc_serialize::json;
+use serde::{Serialize, Deserialize};
+use serde_json;
 use std::ffi::CString;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::io::Error;
 
-#[derive(RustcDecodable, RustcEncodable, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct Cmd {
     executable: String,
     args: Vec<String>,
 }
 
-#[derive(RustcDecodable, RustcEncodable, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct MountBinds {
     source: String,
     target: String,
     read_only: Option<bool>,
 }
 
-#[derive(RustcDecodable, RustcEncodable, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct UserMap {
     uid: u16,
     gid: u16,
 }
 
-#[derive(RustcDecodable, RustcEncodable, Debug, Clone)]
+#[derive(Serialize, Deserialize,Debug, Clone)]
 struct NsConfig {
     hostname: Option<String>,
     program: Cmd,
@@ -68,7 +70,7 @@ impl NsConfig {
         let mut file = File::open(config_file_name).expect(error_message.as_str());
         let mut server_config = String::new();
         file.read_to_string(&mut server_config).unwrap();
-        let ns_config: NsConfig = json::decode(&mut server_config).unwrap();
+        let ns_config: NsConfig = serde_json::from_str(&mut server_config).unwrap();
         ns_config
     }
 
@@ -142,12 +144,12 @@ fn setup_mount_binds(mount_bind_maps: Vec<MountBinds>) {
                 std::ptr::null(),
                 libc::MS_BIND, //Note readonly flag wont work here - handle RO binds later
                 std::ptr::null(),
-            );
+                );
             if res != 0 {
                 println!(
                     "bind mount failed with an error -> {:?}",
                     Error::last_os_error()
-                );
+                    );
             } else {
                 //Handle RO binds
                 if let Some(true) = bm.read_only {
@@ -157,12 +159,12 @@ fn setup_mount_binds(mount_bind_maps: Vec<MountBinds>) {
                         std::ptr::null(),
                         libc::MS_RDONLY | libc::MS_BIND | libc::MS_REMOUNT,
                         std::ptr::null(),
-                    );
+                        );
                     if res != 0 {
                         println!(
                             "bind readonly switch failed with an error -> {:?}",
                             Error::last_os_error()
-                        );
+                            );
                     }
                 }
             }
@@ -177,7 +179,7 @@ fn setup_chroot_env(chroot_path: String) {
             println!(
                 "chroot failed with an error -> {:?}",
                 Error::last_os_error()
-            );
+                );
         }
         let res = libc::chdir(CString::new("/").unwrap().as_ptr());
         if res != 0 {
@@ -190,12 +192,12 @@ fn setup_chroot_env(chroot_path: String) {
             CString::new("proc").unwrap().as_ptr(),
             0u64,
             std::ptr::null(),
-        );
+            );
         if res != 0 {
             println!(
                 "proc mount failed with an error -> {:?}",
                 Error::last_os_error()
-            );
+                );
         }
         //Mount dev filesystem
         let res = libc::mount(
@@ -204,12 +206,12 @@ fn setup_chroot_env(chroot_path: String) {
             CString::new("tmpfs").unwrap().as_ptr(),
             0u64,
             std::ptr::null(),
-        );
+            );
         if res != 0 {
             println!(
                 "dev mount failed with an error -> {:?}",
                 Error::last_os_error()
-            );
+                );
         }
         //Mount run filesystem
         let res = libc::mount(
@@ -218,12 +220,12 @@ fn setup_chroot_env(chroot_path: String) {
             CString::new("tmpfs").unwrap().as_ptr(),
             0u64,
             std::ptr::null(),
-        );
+            );
         if res != 0 {
             println!(
                 "run mount failed with an error -> {:?}",
                 Error::last_os_error()
-            );
+                );
         }
     }
 }
@@ -241,12 +243,12 @@ fn exec_in_ns(Cmd { executable, args }: Cmd) -> libc::c_int {
         let res = libc::execv(
             CString::new(executable.as_bytes()).unwrap().as_ptr(),
             args_c_char.as_ptr(),
-        );
+            );
         if res != 0 {
             println!(
                 "Entry point execution failed with an error -> {:?}",
                 Error::last_os_error()
-            );
+                );
         }
         res
     }
@@ -260,12 +262,12 @@ extern "C" fn setup_ns(ns_config: *mut NsConfig) -> libc::c_int {
             let res = libc::sethostname(
                 CString::new(hostname.as_bytes()).unwrap().as_ptr(),
                 hostname.as_bytes().len(),
-            );
+                );
             if res != 0 {
                 println!(
                     "proc mount failed with an error -> {:?}",
                     Error::last_os_error()
-                );
+                    );
             }
         }
         //Do mappings UID and GID mappings
@@ -312,7 +314,7 @@ fn main() {
             ptr_aligned as *mut libc::c_void,
             ns_flags,
             &mut ns_config as *mut _ as *mut libc::c_void,
-        );
+            );
         //If NEWUSER is not used/user mappings are not provided then you got to be root to perform clone
         if pid != 0 {
             println!("Program PID -> {}", pid);
@@ -329,7 +331,7 @@ fn main() {
                 println!(
                     "CN WAIT ERROR WHILE RUNNING -> {:?}",
                     Error::last_os_error()
-                );
+                    );
             }
         } // no else
     }
