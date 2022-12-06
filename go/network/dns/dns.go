@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 )
 
 const (
@@ -14,7 +15,7 @@ const (
 	QUESTIONQUERYINFOLENGTH  = 4
 
 	DNSHeaderFormatterText = `DNSHeader {
- IDentification : %d
+IDentification : %d
  Flags         	: %016b
  Questions      : %d
  AnswerRRs      : %d
@@ -23,27 +24,30 @@ const (
 }`
 
 	QuestionFormatterText = `Question {
- Name     : [len=%d] %s
+Name     : [len=%d] %s
  Query    : %v
 }`
 
 	QueryFormatterText = `Query {
- Type     : %d
+Type     : %d
  Class    : %d
 }`
 
 	AnswerFormatterText = `Answer {
- Name     : [len=%d] %s
+Name     : [len=%d] %s
  Query    : %v
  TTL      : %d
  RdLength : %d
- RData    : [len=%d] %s
+ RData    : %d
 }`
 )
 
 var (
-	OWNEDDOMAINS = map[string]int32{
-		"www.google.com": 84734,
+	OWNEDDOMAINS = map[string][]uint32{
+		"www.example.com": {
+			0xc0a8006d,
+			0xc0a8006e,
+		},
 	}
 	NETWORKORDER = binary.BigEndian
 )
@@ -102,16 +106,29 @@ func (q Question) String() string {
 	return fmt.Sprintf(QuestionFormatterText, len(q.Name), q.Name, q.Query)
 }
 
+func (q Question) nameAsString() string {
+	k := 0
+	name := []string{}
+	for q.Name[k] != 0 {
+		length := k + int(q.Name[k]) + 1
+		name = append(name, string(q.Name[k+1:length]))
+		k = length
+	}
+
+	return strings.Join(name, ".")
+}
+
 type Answer struct {
 	Name []byte
 	Query
 	TTL      uint32
 	RdLength uint16
-	RData    []byte
+	RData    uint32 ///Always responding with A record //RData    []byte
 }
 
 func (a Answer) String() string {
-	return fmt.Sprintf(AnswerFormatterText, len(a.Name), a.Name, a.Query, a.TTL, a.RdLength, len(a.RData), a.RData)
+	//return fmt.Sprintf(AnswerFormatterText, len(a.Name), a.Name, a.Query, a.TTL, a.RdLength, len(a.RData), a.RData) ///When using other types in response
+	return fmt.Sprintf(AnswerFormatterText, len(a.Name), a.Name, a.Query, a.TTL, a.RdLength, a.RData)
 }
 
 type DNSRequest struct {
@@ -130,22 +147,15 @@ func NewDNSRequest(
 	dumpData(data[:msgSize])
 
 	dnsQuestion := data[HEADERLENGTH:]
-	dnsResourceName := make([]byte, 0, DNSRESOURCENAMEMAXLENGTH)
 
-	var k, resourceNameLength, questionLength = 0, 0, HEADERLENGTH
+	var k, questionLength = 0, HEADERLENGTH
 
 	//Process Questions
 	//Actually, Questions is always = 1
 	for i := 0; i < int(dnsRequest.DNSHeader.Questions); i++ {
 		//Process resource record
 		for dnsQuestion[k] != 0 {
-			resourceNameLength = k + int(dnsQuestion[k]) + 1
 			k++
-			dnsResourceName = append(append(dnsResourceName,
-				dnsQuestion[k:resourceNameLength]...),
-				'.',
-			)
-			k = resourceNameLength
 		}
 		k++
 
@@ -153,13 +163,13 @@ func NewDNSRequest(
 		queryData := bytes.NewBuffer(dnsQuestion[k : k+QUESTIONQUERYINFOLENGTH])
 		binary.Read(queryData, NETWORKORDER, &query)
 		dnsRequest.Question = Question{
-			dnsQuestion[:resourceNameLength+1],
+			dnsQuestion[:k],
 			query,
 		}
 
 		questionLength += k + QUESTIONQUERYINFOLENGTH
 
-		//log.Printf("Looking up for : %s", dnsResourceName)
+		log.Printf("Looking up for : %s", dnsRequest.Question.nameAsString())
 
 	}
 	//We are not worried about AdditionalRRs here
@@ -172,7 +182,7 @@ func NewDNSRequest(
 type DNSResponse struct {
 	DNSHeader
 	Question
-	Answer
+	Answer []Answer
 }
 
 func NewDNSResponse() *DNSResponse {
@@ -189,14 +199,44 @@ func (r DNSResponse) IntoBytesBuffer(
 	binary.Write(dnsResponseHeader, NETWORKORDER, &r.Question.Name)
 	binary.Write(dnsResponseHeader, NETWORKORDER, &r.Question.Query)
 
-	//Write Answer
-	binary.Write(dnsResponseHeader, NETWORKORDER, &r.Answer.Name)
-	binary.Write(dnsResponseHeader, NETWORKORDER, &r.Answer.Query)
-	binary.Write(dnsResponseHeader, NETWORKORDER, &r.Answer.TTL)
-	binary.Write(dnsResponseHeader, NETWORKORDER, &r.Answer.RdLength)
-	binary.Write(dnsResponseHeader, NETWORKORDER, &r.Answer.RData)
+	for _, answer := range r.Answer {
+		//Write Answer
+		binary.Write(dnsResponseHeader, NETWORKORDER, &answer.Name)
+		binary.Write(dnsResponseHeader, NETWORKORDER, &answer.Query)
+		binary.Write(dnsResponseHeader, NETWORKORDER, &answer.TTL)
+		binary.Write(dnsResponseHeader, NETWORKORDER, &answer.RdLength)
+		binary.Write(dnsResponseHeader, NETWORKORDER, &answer.RData)
+	}
 
 	dumpData(dnsResponseHeader.Bytes())
+}
+
+func (s *DNSService) ProcessRequesst(dnsRequest *DNSRequest) *DNSResponse {
+
+	if dnsRequest.DNSHeader.Flags&1<<15 == 0 { //It is a question packet
+
+		dnsResponse := NewDNSResponse()
+		dnsResponse.DNSHeader = dnsRequest.DNSHeader
+		//Set type as answer
+		dnsResponse.DNSHeader.Flags |= 1 << 15
+		dnsResponse.Question = dnsRequest.Question
+
+		if address, ok := OWNEDDOMAINS[dnsRequest.Question.nameAsString()]; ok {
+			dnsResponse.DNSHeader.AnswerRRs = uint16(len(address))
+			for _, ip := range address {
+				dnsResponse.Answer = append(dnsResponse.Answer,
+					Answer{
+						dnsRequest.Question.Name,
+						dnsRequest.Question.Query,
+						60,
+						4,
+						ip, //You can put any valid response here !!!
+					})
+			}
+		}
+		return dnsResponse
+	}
+	return nil
 }
 
 func (s *DNSService) HandleRequest(udpConnection *net.UDPConn, addr *net.UDPAddr, data []byte) {
@@ -206,28 +246,17 @@ func (s *DNSService) HandleRequest(udpConnection *net.UDPConn, addr *net.UDPAddr
 	//Use header from the request and update it for the response
 	log.Printf("Request details: %+v\n", dnsRequest)
 
-	if dnsRequest.DNSHeader.Flags&1<<15 == 0 { //It is a question packet
+	if dnsResponse := s.ProcessRequesst(dnsRequest); dnsResponse != nil { //It is a question packet
 
-		dnsResponse := NewDNSResponse()
-		dnsResponse.DNSHeader = dnsRequest.DNSHeader
-		//Set type as answer
-		dnsResponse.DNSHeader.Flags |= 1 << 15
-		dnsResponse.Question = dnsRequest.Question
-		dnsResponse.DNSHeader.AnswerRRs = 1
-
-		dnsResponse.Answer = Answer{
-			dnsRequest.Question.Name,
-			dnsRequest.Question.Query,
-			60,
-			4,
-			[]byte{1, 1, 1, 1}, //You can put any valid response here !!!
-		}
-
+		log.Printf("Answering for : %s", dnsResponse.Question.nameAsString())
 		log.Printf("Response details: %+v\n", dnsResponse)
 
 		dnsResponseData := new(bytes.Buffer)
 		dnsResponse.IntoBytesBuffer(dnsResponseData)
 		udpConnection.WriteToUDP(dnsResponseData.Bytes(), addr)
+	} else {
+
+		log.Printf("Couldn't respond to this request. Bye!")
 	}
 
 }
