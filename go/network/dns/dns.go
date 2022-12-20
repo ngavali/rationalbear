@@ -239,29 +239,57 @@ func (s *DNSService) ProcessRequesst(dnsRequest *DNSRequest) *DNSResponse {
 	return nil
 }
 
-func (s *DNSService) HandleRequest(udpConnection *net.UDPConn, addr *net.UDPAddr, data []byte) {
+func (s *DNSService) HandleRequest(udpConnection *net.UDPConn, msg UDPMessage) {
+	//, addr *net.UDPAddr, data []byte) {
 
-	log.Printf("Requestor : %+v", addr)
-	dnsRequest := NewDNSRequest(data)
+	log.Printf("Requestor : %+v", msg.UDPAddr)
+	dnsRequest := NewDNSRequest(msg.data)
 	//Use header from the request and update it for the response
 	log.Printf("Request details: %+v\n", dnsRequest)
 
-	if dnsResponse := s.ProcessRequesst(dnsRequest); dnsResponse != nil { //It is a question packet
+	if dnsResponse := s.ProcessRequesst(dnsRequest); dnsResponse != nil {
 
 		log.Printf("Answering for : %s", dnsResponse.Question.nameAsString())
 		log.Printf("Response details: %+v\n", dnsResponse)
 
 		dnsResponseData := new(bytes.Buffer)
 		dnsResponse.IntoBytesBuffer(dnsResponseData)
-		udpConnection.WriteToUDP(dnsResponseData.Bytes(), addr)
+		udpConnection.WriteToUDP(dnsResponseData.Bytes(), msg.UDPAddr)
 	} else {
 
-		log.Printf("Couldn't respond to this request. Bye!")
+		log.Printf("Couldn't handle this request. Bye!")
 	}
 
 }
 
+type UDPMessage struct {
+	*net.UDPAddr
+	msg_len uint32
+	data    []byte
+	err     error
+}
+
+func (s *DNSService) ReadRequestIntoChan(udpConnection *net.UDPConn, msg chan<- UDPMessage) {
+	data := make([]byte, 1024)
+	for !s.shutdown {
+		msgSize, addr, _err := udpConnection.ReadFromUDP(data)
+		if _err != nil || msgSize == 0 {
+			log.Printf("udpConnection.Read: %s", _err)
+			s.shutdown = true
+		} else {
+			msg <- UDPMessage{
+				addr,
+				uint32(msgSize),
+				data[:msgSize],
+				_err,
+			}
+		}
+	}
+}
+
 func (s *DNSService) Run() {
+
+	c := signal_handler()
 
 	udpAddr, _err := net.ResolveUDPAddr("udp", "0.0.0.0:53")
 	if _err != nil {
@@ -273,17 +301,24 @@ func (s *DNSService) Run() {
 	}
 	defer udpConnection.Close()
 
-	data := make([]byte, 1024)
+	msgChan := make(chan UDPMessage)
 
-	for {
+	go s.ReadRequestIntoChan(udpConnection, msgChan)
 
-		msgSize, addr, _err := udpConnection.ReadFromUDP(data)
-		if _err != nil || msgSize == 0 {
-			log.Printf("udpConnection.Read: %s", _err)
-			break
+	for !s.shutdown {
+
+		select {
+		case msg := <-c:
+			log.Printf("Exiting... %+v", msg)
+			s.shutdown = true
+			close(msgChan)
+		case msg := <-msgChan:
+			if msg.err != nil {
+				log.Printf("Error reading the data. %+v", msg.err)
+			} else {
+				s.HandleRequest(udpConnection, msg)
+			}
 		}
-
-		s.HandleRequest(udpConnection, addr, data[:msgSize])
 
 	}
 }
