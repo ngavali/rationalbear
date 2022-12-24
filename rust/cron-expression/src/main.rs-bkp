@@ -1,0 +1,212 @@
+use std::time::UNIX_EPOCH;
+
+#[derive(Clone)]
+struct CronSchedule {
+    seconds: Vec<u8>,
+    hours: Vec<u8>,
+    day_of_month: Vec<u8>,
+    month: Vec<u8>,
+    day_of_week: Vec<u8>,
+}
+
+impl CronSchedule {
+    fn new(cron_expression: &str) -> CronSchedule {
+        //let cron_expression = "03-15/5,45-50,*/10 */4 1-7 12 1-4";
+        let cron_fields = cron_expression.split(" ").collect::<Vec<&str>>();
+        if cron_fields.len() != 5 {
+            panic!("Invalid cron expression");
+        }
+        let (seconds, hours, day_of_month, month, day_of_week) = (
+            CronSchedule::process_field(cron_fields[0], 00, 59),
+            CronSchedule::process_field(cron_fields[1], 00, 59),
+            CronSchedule::process_field(cron_fields[2], 01, 31),
+            CronSchedule::process_field(cron_fields[3], 01, 12),
+            CronSchedule::process_field(cron_fields[4], 00, 07),
+        );
+
+        CronSchedule {
+            seconds,
+            hours,
+            day_of_month,
+            month,
+            day_of_week,
+        }
+    }
+
+    fn get_range(ch: &str, mut low: u8, mut high: u8) -> Vec<u8> {
+        let mut step = 1;
+        let mut range = Vec::new();
+
+        let expression = ch.split('/').collect::<Vec<&str>>();
+
+        let has_range = expression[0].split('-').collect::<Vec<&str>>();
+
+        if has_range.len() == 2 {
+            low = has_range[0].parse::<u8>().unwrap();
+            high = has_range[1].parse::<u8>().unwrap();
+            println!("Has range  -> ({:2}, {:2})", low, high);
+        }
+
+        if expression.len() == 2 {
+            step = expression[1].parse::<u8>().unwrap();
+        }
+
+        let mut i = low;
+        while i <= high {
+            if i == low {
+                range.push(i);
+                i += step;
+            }
+            low += 1;
+        }
+
+        println!("Computed range -> {:?}", range);
+        range
+    }
+
+    fn get_list(ch: &str) -> Vec<&str> {
+        ch.split(',').collect::<Vec<&str>>()
+    }
+
+    fn process_field(field: &str, low: u8, high: u8) -> Vec<u8> {
+        let mut ranges = Vec::new();
+        for expr in CronSchedule::get_list(field) {
+            println!("Expression -> {}", expr);
+            let mut range = CronSchedule::get_range(expr, low, high);
+            ranges.append(&mut range);
+        }
+        ranges.sort();
+        ranges.dedup();
+        ranges
+    }
+}
+
+impl std::fmt::Display for CronSchedule {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "CronSchedule {{
+seconds     : {:?},
+hours       : {:?},
+day_of_month: {:?}, 
+month       : {:?}, 
+day_of_week : {:?},
+}}",
+            self.seconds, self.hours, self.day_of_month, self.month, self.day_of_week
+        )
+    }
+}
+
+struct UnixTimestamp {
+    seconds: u64,
+}
+
+impl UnixTimestamp {
+    fn new() -> UnixTimestamp {
+        let epoch = std::time::SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap();
+        UnixTimestamp {
+            seconds: epoch.as_secs(),
+        }
+    }
+
+    fn from_timestamp(seconds: u64) -> UnixTimestamp {
+        UnixTimestamp { seconds }
+    }
+
+    fn get_minute(&self) -> u8 {
+        //((self.seconds % 3600) / 60) as u8
+        (((self.seconds % 86400) % 3600) / 60) as u8
+    }
+
+    fn get_hour(&self) -> u8 {
+        ((self.seconds % 86400) / 3600) as u8
+    }
+
+    fn get_month(&self) -> u8 {
+        (((self.seconds / 2629743) % 12) + 1) as u8
+    }
+
+    fn get_year(&self) -> u16 {
+        1970 + (self.seconds / 31556926) as u16
+    }
+}
+
+impl std::fmt::Display for UnixTimestamp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "UnixTimestamp {{
+seconds:    : {:?},
+}}",
+            self.seconds
+        )
+    }
+}
+
+fn main() {
+    //cron_expression format
+    //seconds hours day_of_month month day_of_week
+    let cron_expression = "03-15/5,45-50,*/10 */4 1-7 12 1-4";
+    let cron_schedule = CronSchedule::new(cron_expression);
+    println!("{} Parsed -> {}", cron_expression, cron_schedule);
+
+    let unix_timestamp = UnixTimestamp::new();
+    println!(
+        "Current unix epoch {}
+        Minutes: {}
+        Hours  : {}
+        Month  : {}
+        Year   : {}
+        ",
+        unix_timestamp,
+        unix_timestamp.get_minute(),
+        unix_timestamp.get_hour(),
+        unix_timestamp.get_month(),
+        unix_timestamp.get_year(),
+    );
+}
+
+#[test]
+fn test_unix_timestamp_from_timestamp() {
+    //Tue Feb 12 15:42:27 UTC 2013
+    let unix_timestamp = UnixTimestamp::from_timestamp(1360683747);
+    assert_eq!(2013, unix_timestamp.get_year());
+    assert_eq!(2, unix_timestamp.get_month());
+    assert_eq!(15, unix_timestamp.get_hour());
+    assert_eq!(42, unix_timestamp.get_minute());
+    println!(
+        "Current unix epoch {}
+        Minutes: {}
+        Hours  : {}
+        Month  : {}
+        Year   : {}
+        ",
+        unix_timestamp,
+        unix_timestamp.get_minute(),
+        unix_timestamp.get_hour(),
+        unix_timestamp.get_month(),
+        unix_timestamp.get_year(),
+    );
+
+    //Tue Mar 01 00:01:01 UTC 2000
+    let unix_timestamp = UnixTimestamp::from_timestamp(951868861);
+    assert_eq!(2000, unix_timestamp.get_year());
+    assert_eq!(3, unix_timestamp.get_month());
+    assert_eq!(00, unix_timestamp.get_hour());
+    assert_eq!(01, unix_timestamp.get_minute());
+    println!(
+        "Current unix epoch {}
+        Minutes: {}
+        Hours  : {}
+        Month  : {}
+        Year   : {}
+        ",
+        unix_timestamp,
+        unix_timestamp.get_minute(),
+        unix_timestamp.get_hour(),
+        unix_timestamp.get_month(),
+        unix_timestamp.get_year(),
+    );
+}
