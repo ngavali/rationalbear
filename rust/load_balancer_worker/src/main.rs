@@ -494,13 +494,13 @@ impl LoadBalancer {
 }
 
 fn main() -> std::io::Result<()> {
-    let backend_db_1 = Backend::new(String::from("mysql-db-1"), 3308);
-    let backend_db_2 = Backend::new(String::from("mysql-db-2"), 3308);
+    let backend_db_1 = Backend::new(String::from("mysql-db-1"), 3306);
+    let backend_db_2 = Backend::new(String::from("mysql-db-2"), 3306);
 
     let mut backends = VecDeque::new();
     backends.push_back(backend_db_1);
     backends.push_back(backend_db_2);
-    let mut my_lb = LoadBalancer::new(83306, backends);
+    let mut my_lb = LoadBalancer::new(3306, backends);
     println!("{:#?}", my_lb);
     my_lb.start()
 }
