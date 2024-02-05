@@ -175,7 +175,7 @@ impl Backend {
 
 struct Worker {
     backends: VecDeque<Backend>,
-    worker_channel_rx: Option<std::sync::mpsc::Receiver<libc::c_int>>,
+    worker_channel_rx: std::sync::mpsc::Receiver<libc::c_int>,
     epoll: Epoll,
     fd_map: HashMap<i32, i32>,
     end_points_map: HashMap<i32, Box<dyn EndPoint>>,
@@ -184,7 +184,7 @@ struct Worker {
 impl Worker {
     fn new(
         backends: VecDeque<Backend>,
-        worker_channel_rx: Option<std::sync::mpsc::Receiver<libc::c_int>>,
+        worker_channel_rx: std::sync::mpsc::Receiver<libc::c_int>,
     ) -> Self {
         Worker {
             backends,
@@ -316,13 +316,7 @@ impl Worker {
 
     fn start(&mut self) {
         loop {
-            let rx = match self.worker_channel_rx.as_ref() {
-                Some(rx) => rx,
-                None => {
-                    panic!("Something went terribly wrong!!!");
-                }
-            };
-            match rx.try_recv() {
+            match self.worker_channel_rx.try_recv() {
                 Ok(frontend_fd) => {
                     self.add_connection(frontend_fd);
                 }
@@ -361,7 +355,7 @@ impl LoadBalancer {
     fn start_worker_thread(&self, worker_channel_rx: std::sync::mpsc::Receiver<libc::c_int>) {
         let backends = self.backends.clone();
         std::thread::spawn(move || {
-            let mut worker = Worker::new(backends, Some(worker_channel_rx));
+            let mut worker = Worker::new(backends, worker_channel_rx);
             worker.start();
         });
         println!("Worker thread started...");
