@@ -174,6 +174,7 @@ impl Backend {
 }
 
 struct Worker {
+    id: u8,
     backends: VecDeque<Backend>,
     worker_channel_rx: std::sync::mpsc::Receiver<libc::c_int>,
     epoll: Epoll,
@@ -183,10 +184,12 @@ struct Worker {
 
 impl Worker {
     fn new(
+        id: u8,
         backends: VecDeque<Backend>,
         worker_channel_rx: std::sync::mpsc::Receiver<libc::c_int>,
     ) -> Self {
         Worker {
+            id,
             backends,
             worker_channel_rx,
             epoll: Epoll::new(),
@@ -214,25 +217,11 @@ impl Worker {
         self.end_points_map.remove(&fd);
     }
 
-    //Select backend in Round-Robin fashion
-    fn select_backend(&mut self) -> Backend {
-        match self.backends.pop_front() {
-            Some(backend) => {
-                self.backends.push_back(backend.clone());
-                backend
-            }
-            None => {
-                panic!("Didn't expect this to happen!");
-            }
-        }
-    }
-
-    fn add_connection(&mut self, frontend_fd: libc::c_int) {
-        let backend = self.select_backend().get_connection();
+    fn add_connection(&mut self, frontend_fd: libc::c_int, backend: BackendStream) {
         println!(
             "Connection fe_fd:{} be_fd:{}",
             frontend_fd,
-            backend.get_fd()
+            backend.get_fd(),
         );
         self.epoll_add_to_interest_list(frontend_fd);
         self.epoll_add_to_interest_list(backend.get_fd());
@@ -252,6 +241,7 @@ impl Worker {
                     for event in events.iter() {
                         match self.fd_map.get(&(event.u64 as i32)) {
                             Some(write_to_fd) => {
+                                println!("Worker thread id [{}]", self.id);
                                 let read_from_fd = event.u64 as i32;
                                 let read_from_stream =
                                     match self.end_points_map.get_mut(&read_from_fd) {
@@ -314,11 +304,25 @@ impl Worker {
         };
     }
 
+    //Select backend in Round-Robin fashion
+    fn select_backend(&mut self) -> Backend {
+        match self.backends.pop_front() {
+            Some(backend) => {
+                self.backends.push_back(backend.clone());
+                backend
+            }
+            None => {
+                panic!("Didn't expect this to happen!");
+            }
+        }
+    }
+
     fn start(&mut self) {
         loop {
             match self.worker_channel_rx.try_recv() {
                 Ok(frontend_fd) => {
-                    self.add_connection(frontend_fd);
+                    let backend = self.select_backend().get_connection();
+                    self.add_connection(frontend_fd, backend);
                 }
                 Err(_err) if _err == std::sync::mpsc::TryRecvError::Disconnected => {
                     println!(
@@ -340,31 +344,41 @@ impl Worker {
 struct LoadBalancer {
     listen_port: i32,
     backends: VecDeque<Backend>,
-    worker_channel_tx: Option<std::sync::mpsc::Sender<libc::c_int>>,
+    num_workers: u8,
+    worker_channels_tx: VecDeque<std::sync::mpsc::Sender<libc::c_int>>,
 }
 
 impl LoadBalancer {
-    fn new(listen_port: i32, backends: VecDeque<Backend>) -> Self {
+    fn new(listen_port: i32, backends: VecDeque<Backend>, num_workers: u8) -> Self {
         LoadBalancer {
             listen_port,
             backends,
-            worker_channel_tx: None,
+            num_workers,
+            worker_channels_tx: VecDeque::new(),
         }
     }
 
-    fn start_worker_thread(&self, worker_channel_rx: std::sync::mpsc::Receiver<libc::c_int>) {
-        let backends = self.backends.clone();
-        std::thread::spawn(move || {
-            let mut worker = Worker::new(backends, worker_channel_rx);
-            worker.start();
-        });
-        println!("Worker thread started...");
+    fn start_worker_thread(&self, worker_channels_rx: Vec<std::sync::mpsc::Receiver<libc::c_int>>) {
+        let mut id = 1;
+        for worker_channel_rx in worker_channels_rx {
+            let mut backends = self.backends.clone();
+            backends.rotate_left(1);
+            std::thread::spawn(move || {
+                let mut worker = Worker::new(id, backends, worker_channel_rx);
+                worker.start();
+            });
+            println!("Worker thread started... id={}", id);
+            id += 1;
+        }
     }
 
-    fn send_to_worker(&self, frontend_fd: libc::c_int) {
-        match self.worker_channel_tx.as_ref() {
+    fn send_to_worker(&mut self, frontend_fd: libc::c_int) {
+        let worker_channel_tx = self.worker_channels_tx.pop_front();
+        match worker_channel_tx {
             Some(tx) => match tx.send(frontend_fd) {
-                Ok(_) => {}
+                Ok(_) => {
+                    self.worker_channels_tx.push_back(tx);
+                }
                 Err(_err) => {
                     println!(
                         "Error sending frontend_fd to worker. Error = {}",
@@ -429,9 +443,15 @@ impl LoadBalancer {
                                     println!("Binded!!!");
 
                                     //Time to start the worker thread
-                                    let (tx, rx) = std::sync::mpsc::channel::<libc::c_int>();
-                                    self.worker_channel_tx = Some(tx);
-                                    self.start_worker_thread(rx);
+                                    let mut worker_count = self.num_workers;
+                                    let mut worker_channels_rx = Vec::new();
+                                    while worker_count > 0 {
+                                        let (tx, rx) = std::sync::mpsc::channel::<libc::c_int>();
+                                        self.worker_channels_tx.push_back(tx);
+                                        worker_channels_rx.push(rx);
+                                        worker_count -= 1;
+                                    }
+                                    self.start_worker_thread(worker_channels_rx);
 
                                     match libc::listen(fd, 2000) {
                                         0 => {
@@ -494,7 +514,7 @@ fn main() -> std::io::Result<()> {
     let mut backends = VecDeque::new();
     backends.push_back(backend_db_1);
     backends.push_back(backend_db_2);
-    let mut my_lb = LoadBalancer::new(3306, backends);
+    let mut my_lb = LoadBalancer::new(3306, backends, 8);
     println!("{:#?}", my_lb);
     my_lb.start()
 }
