@@ -1,20 +1,67 @@
 use std::cmp::Ordering;
 
-struct Solution {}
-
-struct Point {
+struct Corner {
     x: i32,
     h: i32,
 }
 
-struct PriorityQueue(Vec<i32>);
+struct SkyLine {}
 
-impl PriorityQueue {
-    fn new() -> Self {
-        PriorityQueue(Vec::new())
+impl SkyLine {
+    fn find(corners: &Vec<Corner>) -> Vec<Vec<i32>> {
+        let mut skyline = Vec::with_capacity(corners.len());
+        let mut max_heap = MaxHeap::with_capacity(corners.len() / 2);
+
+        let (mut current_max_height, mut previous_max_height) = (0, 0);
+        for point in corners {
+            if point.h < 0 {
+                max_heap.add(-point.h);
+            } else {
+                max_heap.remove(point.h);
+            }
+            current_max_height = max_heap.get();
+            if current_max_height != previous_max_height {
+                skyline.push(vec![point.x, current_max_height]);
+                previous_max_height = current_max_height;
+            }
+        }
+        skyline
+    }
+}
+
+impl Corner {
+    fn from(buildings: Vec<Vec<i32>>) -> Vec<Corner> {
+        let mut corners: Vec<Corner> = Vec::with_capacity(buildings.len());
+
+        for building in buildings {
+            corners.push(Corner {
+                x: building[0],
+                h: -building[2],
+            });
+            corners.push(Corner {
+                x: building[1],
+                h: building[2],
+            });
+        }
+
+        corners.sort_by(|p1, p2| match p1.x.cmp(&p2.x) {
+            Ordering::Equal => p1.h.cmp(&p2.h),
+            whatever => whatever,
+        });
+
+        corners
+    }
+}
+
+struct MaxHeap(Vec<i32>);
+
+impl MaxHeap {
+    fn with_capacity(size: usize) -> Self {
+        MaxHeap(Vec::with_capacity(size))
     }
     fn add(&mut self, v: i32) {
         self.0.push(v);
+        self.0.sort();
     }
 
     fn remove(&mut self, v: i32) {
@@ -25,8 +72,7 @@ impl PriorityQueue {
             None => {}
         }
     }
-    fn get_top(&mut self) -> i32 {
-        self.0.sort();
+    fn get(&mut self) -> i32 {
         match self.0.last() {
             Some(&v) => v,
             None => 0,
@@ -34,44 +80,15 @@ impl PriorityQueue {
     }
 }
 
+struct Solution {}
+
 impl Solution {
     pub fn get_skyline(buildings: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
-        let mut points: Vec<Point> = Vec::new();
+        let N = buildings.len();
 
-        let mut final_points = Vec::new();
+        let mut corners: Vec<Corner> = Corner::from(buildings);
 
-        for building in buildings {
-            points.push(Point {
-                x: building[0],
-                h: -building[2],
-            });
-            points.push(Point {
-                x: building[1],
-                h: building[2],
-            });
-        }
-
-        points.sort_by(|p1, p2| match p1.x.cmp(&p2.x) {
-            Ordering::Equal => p1.h.cmp(&p2.h),
-            whatever => whatever,
-        });
-
-        let mut max_heap = PriorityQueue::new();
-
-        let mut previous_max_height = 0;
-        for point in points {
-            if point.h < 0 {
-                max_heap.add(point.h.abs());
-            } else {
-                max_heap.remove(point.h);
-            }
-            let current_max_height = max_heap.get_top();
-            if current_max_height != previous_max_height {
-                final_points.push(vec![point.x, current_max_height]);
-            }
-            previous_max_height = current_max_height;
-        }
-        final_points
+        SkyLine::find(&corners)
     }
 }
 
