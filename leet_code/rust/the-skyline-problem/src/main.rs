@@ -1,32 +1,37 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, collections::BTreeMap};
+
+struct MaxHeap(BTreeMap<i32, u64>);
+
+impl MaxHeap {
+    fn new() -> Self {
+        MaxHeap(BTreeMap::new())
+    }
+    fn add(&mut self, k: i32) {
+        match self.0.get_mut(&k) {
+            Some(v) => *v += 1,
+            None => {
+                self.0.insert(k, 0);
+            }
+        };
+    }
+
+    fn remove(&mut self, k: i32) {
+        match self.0.get(&k) {
+            Some(&v) if v >= 1 => self.0.insert(k, v - 1),
+            _ => self.0.remove(&k),
+        };
+    }
+    fn get(&mut self) -> i32 {
+        match self.0.last_key_value() {
+            Some((&k, _)) => k,
+            None => 0,
+        }
+    }
+}
 
 struct Corner {
     x: i32,
     h: i32,
-}
-
-struct SkyLine {}
-
-impl SkyLine {
-    fn find(corners: &Vec<Corner>) -> Vec<Vec<i32>> {
-        let mut skyline = Vec::with_capacity(corners.len());
-        let mut max_heap = MaxHeap::with_capacity(corners.len() / 2);
-
-        let (mut current_max_height, mut previous_max_height) = (0, 0);
-        for point in corners {
-            if point.h < 0 {
-                max_heap.add(-point.h);
-            } else {
-                max_heap.remove(point.h);
-            }
-            current_max_height = max_heap.get();
-            if current_max_height != previous_max_height {
-                skyline.push(vec![point.x, current_max_height]);
-                previous_max_height = current_max_height;
-            }
-        }
-        skyline
-    }
 }
 
 impl Corner {
@@ -53,30 +58,27 @@ impl Corner {
     }
 }
 
-struct MaxHeap(Vec<i32>);
+struct SkyLine {}
 
-impl MaxHeap {
-    fn with_capacity(size: usize) -> Self {
-        MaxHeap(Vec::with_capacity(size))
-    }
-    fn add(&mut self, v: i32) {
-        self.0.push(v);
-        self.0.sort();
-    }
+impl SkyLine {
+    fn from(corners: &Vec<Corner>) -> Vec<Vec<i32>> {
+        let mut skyline = Vec::with_capacity(corners.len());
+        let mut max_heap = MaxHeap::new();
 
-    fn remove(&mut self, v: i32) {
-        match self.0.iter().position(|&value| value == v) {
-            Some(i) => {
-                self.0.remove(i);
+        let (mut current_max_height, mut previous_max_height) = (0, 0);
+        for point in corners {
+            if point.h < 0 {
+                max_heap.add(-point.h);
+            } else {
+                max_heap.remove(point.h);
             }
-            None => {}
+            current_max_height = max_heap.get();
+            if current_max_height != previous_max_height {
+                skyline.push(vec![point.x, current_max_height]);
+                previous_max_height = current_max_height;
+            }
         }
-    }
-    fn get(&mut self) -> i32 {
-        match self.0.last() {
-            Some(&v) => v,
-            None => 0,
-        }
+        skyline
     }
 }
 
@@ -84,11 +86,9 @@ struct Solution {}
 
 impl Solution {
     pub fn get_skyline(buildings: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
-        let N = buildings.len();
+        let corners: Vec<Corner> = Corner::from(buildings);
 
-        let mut corners: Vec<Corner> = Corner::from(buildings);
-
-        SkyLine::find(&corners)
+        SkyLine::from(&corners)
     }
 }
 
