@@ -6,6 +6,7 @@ impl MaxHeap {
     fn new() -> Self {
         MaxHeap(BTreeMap::new())
     }
+
     fn add(&mut self, k: i32) {
         match self.0.get_mut(&k) {
             Some(v) => *v += 1,
@@ -16,9 +17,13 @@ impl MaxHeap {
     }
 
     fn remove(&mut self, k: i32) {
-        match self.0.get(&k) {
-            Some(&v) if v >= 1 => self.0.insert(k, v - 1),
-            _ => self.0.remove(&k),
+        match self.0.get_mut(&k) {
+            Some(v) if *v >= 1 => {
+                *v -= 1;
+            }
+            _ => {
+                self.0.remove(&k);
+            }
         };
     }
     fn get(&mut self) -> i32 {
