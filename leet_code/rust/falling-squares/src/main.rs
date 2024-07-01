@@ -1,6 +1,9 @@
+/*
+https://leetcode.com/problems/falling-squares/
 //Previous approach was incorrect,
 //We need to find max height as we drop squares not from left to right
 //Let's do Naive implementation first
+*/
 const DEBUG: bool = true;
 
 struct StackHeight;
