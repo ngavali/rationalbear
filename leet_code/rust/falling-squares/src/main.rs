@@ -11,6 +11,10 @@ impl StackHeight {
         let mut height_memory = Vec::with_capacity(squares.len());
         let mut max_height = 0;
 
+        for square in squares.iter_mut() {
+            square.push(square[0] + square[1])
+        }
+
         for i in 0..squares.len() {
             let mut current_height = 0;
             for j in 0..i {
@@ -23,15 +27,11 @@ impl StackHeight {
                     );
                 }
                 //Check if this square sits on top of the previous one
-                if squares[i][0] + squares[i][1] > squares[j][0]
-                    && squares[i][0] < squares[j][0] + squares[j][1]
-                {
+                if squares[i][2] > squares[j][0] && squares[i][0] < squares[j][2] {
                     if DEBUG {
                         println!(
                             " j -> {j} {:?} range [{} {}]",
-                            squares[j],
-                            squares[j][0],
-                            squares[j][0] + squares[j][1]
+                            squares[j], squares[j][0], squares[j][2]
                         );
                     }
                     if current_height < height_memory[j] {
@@ -39,10 +39,12 @@ impl StackHeight {
                     }
                 }
             }
-            if max_height < current_height + squares[i][1] {
-                max_height = current_height + squares[i][1]
-            }
             height_memory.push(current_height + squares[i][1]);
+
+            if max_height < *height_memory.last().unwrap() {
+                max_height = *height_memory.last().unwrap();
+            }
+
             if DEBUG {
                 println!(
                     "max height -> {} current_height -> {} height_memory -> {:?} stack -> {:?}",
