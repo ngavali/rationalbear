@@ -8,7 +8,13 @@ use std::io::prelude::{Read, Seek, Write};
 #[derive(Parser, Debug)]
 struct Args {
     /// Name of file to en/decrypt
-    #[arg(short, long, required = true, value_name = "FILE_NAME")]
+    #[rustfmt::skip]
+    #[arg(
+        short,
+        long,
+        required = true,
+        value_name = "FILE_NAME"
+        )]
     file: String,
 
     /// En/Decryption key (hexadecimal bytes)
