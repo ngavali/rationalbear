@@ -1,25 +1,88 @@
-use std::{
-    cmp::Reverse,
-    collections::{BinaryHeap, HashMap},
-};
+use std::collections::HashMap;
+
+//At most 5*DATA_SIZE^4 calls?
+const DATA_SIZE: usize = 100;
+
+struct Heap {
+    length: usize,
+    data: [i64; DATA_SIZE],
+}
+
+impl Heap {
+    fn new() -> Self {
+        Heap {
+            length: 0,
+            data: [0; DATA_SIZE],
+        }
+    }
+
+    fn push(&mut self, element: i64) {
+        self.data[self.length] = element;
+        self.length += 1;
+        let mut pos = self.length - 1;
+        let mut parent_pos = pos;
+        while pos > 0 {
+            parent_pos = (parent_pos - 1) >> 1;
+            if self.data[parent_pos] > self.data[pos] {
+                break;
+            }
+            (self.data[parent_pos], self.data[pos]) = (self.data[pos], self.data[parent_pos]);
+            pos = parent_pos;
+        }
+    }
+
+    fn peek(&self) -> Option<i64> {
+        match self.length {
+            0 => None,
+            _ => Some(self.data[0]),
+        }
+    }
+
+    fn pop(&mut self) -> Option<i64> {
+        match self.length {
+            0 => None,
+            _ => {
+                self.length -= 1;
+                (self.data[0], self.data[self.length]) = (self.data[self.length], self.data[0]);
+                let (mut largest, mut pos, mut l) = (0, 0, 1);
+                loop {
+                    l = (pos << 1) | 0x1;
+                    if l < self.length && self.data[l] > self.data[largest] {
+                        largest = l;
+                    }
+                    if l + 1 < self.length && self.data[l + 1] > self.data[largest] {
+                        largest = l + 1;
+                    }
+                    if largest == pos {
+                        break;
+                    }
+                    (self.data[pos], self.data[largest]) = (self.data[largest], self.data[pos]);
+                    pos = largest;
+                }
+                Some(self.data[self.length])
+            }
+        }
+    }
+}
 
 struct Storage {
-    left: BinaryHeap<i64>,
-    right: BinaryHeap<Reverse<i64>>,
+    left: Heap,
+    right: Heap,
 }
 
 struct Solution;
+
 impl Solution {
     pub fn median_sliding_window(nums: Vec<i32>, k: i32) -> Vec<f64> {
         let mut result = Vec::with_capacity(nums.len() - k as usize + 1);
         let k = k as usize;
 
-        let mut balance = 0;
+        let mut balance;
 
         let mut to_remove = HashMap::<i64, i64>::new();
         let mut storage = Storage {
-            left: BinaryHeap::with_capacity(100000),
-            right: BinaryHeap::with_capacity(100000),
+            left: Heap::new(),
+            right: Heap::new(),
         };
         let mut i = 0;
 
@@ -30,17 +93,16 @@ impl Solution {
         }
 
         while i > (k + 1) / 2 {
-            storage.right.push(Reverse(storage.left.pop().unwrap()));
+            storage.right.push(-storage.left.pop().unwrap());
             i -= 1;
         }
 
         let odd = k % 2 != 0;
 
         result.push(match odd {
-            true => *storage.left.peek().unwrap() as f64,
+            true => storage.left.peek().unwrap() as f64,
             false => {
-                (*storage.left.peek().unwrap() as f64 + storage.right.peek().unwrap().0 as f64)
-                    / 2.0
+                (storage.left.peek().unwrap() as f64 + -storage.right.peek().unwrap() as f64) / 2.0
             }
         });
 
@@ -65,19 +127,19 @@ impl Solution {
                 storage.left.push(nums[i] as i64);
                 balance += 1;
             } else {
-                storage.right.push(Reverse(nums[i] as i64));
+                storage.right.push(-(nums[i] as i64));
                 balance -= 1;
             }
 
             if balance > 0 {
-                storage.right.push(Reverse(storage.left.pop().unwrap()));
+                storage.right.push(-storage.left.pop().unwrap());
             } else if balance < 0 {
-                storage.left.push(storage.right.pop().unwrap().0);
+                storage.left.push(-storage.right.pop().unwrap());
             }
 
             //Pop if remove num on top
             while let Some(k) = storage.left.peek() {
-                match to_remove.get_mut(k) {
+                match to_remove.get_mut(&k) {
                     Some(v) => {
                         if *v > 0 {
                             *v -= 1;
@@ -91,13 +153,13 @@ impl Solution {
             }
             //Pop if remove num on top
             while let Some(k) = storage.right.peek() {
-                match to_remove.get_mut(&k.0) {
+                match to_remove.get_mut(&(-k)) {
                     Some(v) => {
                         if *v > 0 {
                             storage.right.pop();
                             *v -= 1;
                         } else if *v == 0 {
-                            to_remove.remove(&k.0);
+                            to_remove.remove(&-k);
                         }
                     }
                     _ => break,
@@ -105,9 +167,9 @@ impl Solution {
             }
 
             result.push(match odd {
-                true => *storage.left.peek().unwrap() as f64,
+                true => storage.left.peek().unwrap() as f64,
                 false => {
-                    (*storage.left.peek().unwrap() as f64 + storage.right.peek().unwrap().0 as f64)
+                    (storage.left.peek().unwrap() as f64 + -storage.right.peek().unwrap() as f64)
                         / 2.0
                 }
             });
