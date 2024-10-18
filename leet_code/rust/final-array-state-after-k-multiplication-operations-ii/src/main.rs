@@ -1,6 +1,6 @@
 struct Solution;
 
-use std::{cmp::Reverse, collections::BinaryHeap, fmt::Binary};
+use std::{cmp::Reverse, collections::BinaryHeap};
 
 const M: i64 = 1_000_000_007;
 
