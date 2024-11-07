@@ -53,6 +53,15 @@ impl Solution {
             }
         }
 
+        match diff_index.len() {
+            2 => {
+                num_1[diff_index[0]] == num_2[diff_index[1]]
+                    && num_1[diff_index[1]] == num_2[diff_index[0]]
+            }
+            _ => return false,
+        }
+
+        /*
         if diff_index.len() == 2 {
             (num_1[diff_index[0]], num_1[diff_index[1]]) =
                 (num_1[diff_index[1]], num_1[diff_index[0]]);
@@ -62,6 +71,7 @@ impl Solution {
         }
 
         false
+        */
     }
 }
 
