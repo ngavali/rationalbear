@@ -1,10 +1,10 @@
 struct Solution;
 
 impl Solution {
-    fn append_zeros(num: Vec<u8>, zeros: usize) -> Vec<u8> {
-        if zeros > 0 {
+    fn append_zeros(num: Vec<u8>, repeat: usize) -> Vec<u8> {
+        if repeat > 0 {
             let mut zero_prefixed_num = std::iter::repeat("0")
-                .take(zeros)
+                .take(repeat)
                 .collect::<String>()
                 .as_bytes()
                 .to_vec();
