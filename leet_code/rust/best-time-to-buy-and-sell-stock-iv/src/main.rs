@@ -1,25 +1,43 @@
 /* Hard
- * https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iii/
+ * https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iv
  */
 
 struct Solution;
 
 impl Solution {
-    pub fn max_profit(prices: Vec<i32>) -> i32 {
-        let max_trnx: usize = 2;
+    /* Alternate
+    pub fn max_profit(k: i32, prices: Vec<i32>) -> i32 {
+        let k = k as usize;
+        let max_trnx: usize = k<<1;
         let n = prices.len();
-        let mut profit_table = vec![i32::MIN; 2 * max_trnx];
+        let mut profit_table_buy = vec![i32::MIN; k];
+        let mut profit_table_sell = vec![0; k];
 
-        for i in 0..profit_table.len() {
+        for i in 0..n {
+            profit_table_buy[0] = profit_table_buy[0].max(-prices[i]);
+            profit_table_sell[0] = profit_table_sell[0].max(profit_table_buy[0] + prices[i]);
+            for j in 1..k {
+                profit_table_buy[j] = profit_table_buy[j].max(profit_table_sell[j - 1] - prices[i]);
+                profit_table_sell[j] = profit_table_sell[j].max(profit_table_buy[j] + prices[i]);
+            }
+        }
+        profit_table_sell[k-1]
+    }
+     */
+    pub fn max_profit(k: i32, prices: Vec<i32>) -> i32 {
+        let max_trnx: usize = (k << 1) as usize;
+        let n = prices.len();
+        let mut profit_table = vec![i32::MIN; max_trnx];
+
+        for i in 0..max_trnx {
             if i & 0x1 == 0x1 {
                 profit_table[i] = 0;
             }
         }
 
-
         for i in 0..n {
             profit_table[0] = profit_table[0].max(-prices[i]);
-            for j in 1..2 * max_trnx {
+            for j in 1..max_trnx {
                 if j & 0x01 == 0x00 {
                     profit_table[j] = profit_table[j].max(profit_table[j - 1] - prices[i]);
                 } else {
@@ -28,12 +46,12 @@ impl Solution {
             }
         }
 
-        profit_table[(max_trnx << 1) - 1]
+        profit_table[max_trnx - 1]
     }
 }
 
 fn main() {
-    println!("{}", Solution::max_profit(vec![3, 3, 5, 0, 0, 3, 1, 4]));
+    println!("{}", Solution::max_profit(2, vec![3, 3, 5, 0, 0, 3, 1, 4]));
 }
 
 #[cfg(test)]
@@ -44,12 +62,12 @@ mod test {
     #[test]
     fn test_max_profit() {
         let test_cases = vec![
-            (vec![3,3,5,0,0,3,1,4],6),
-            (vec![1, 2, 3, 4, 5], 4),
-            (vec![3, 3, 5, 0, 0, 3, 1, 4], 6),
-            (vec![1, 2, 3, 4, 5], 4),
-            (vec![7, 6, 4, 3, 1], 0),
-            (vec![3, 2, 6, 5, 0, 3], 7),
+            (vec![3, 3, 5, 0, 0, 3, 1, 4], 2, 6),
+            (vec![1, 2, 3, 4, 5], 2, 4),
+            (vec![3, 3, 5, 0, 0, 3, 1, 4], 2, 6),
+            (vec![1, 2, 3, 4, 5], 2, 4),
+            (vec![7, 6, 4, 3, 1], 2, 0),
+            (vec![3, 2, 6, 5, 0, 3], 2, 7),
             (
                 vec![
                     397, 6621, 4997, 7506, 8918, 1662, 9187, 3278, 3890, 514, 18, 9305, 93, 5508,
@@ -130,6 +148,7 @@ mod test {
                     8658, 3237, 1311, 5943, 8487, 3928, 7051, 306, 6033, 3842, 3285, 8951, 1826,
                     7616, 2324, 648, 9252, 5476, 8556, 4445, 6784,
                 ],
+                2,
                 19965,
             ),
             (
@@ -1505,12 +1524,13 @@ mod test {
                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                     0, 0, 0,
                 ],
+                2,
                 4,
             ),
         ];
 
-        for (input, output) in test_cases.into_iter() {
-            assert_eq!(output, Solution::max_profit(input));
+        for (i1, i2, output) in test_cases.into_iter() {
+            assert_eq!(output, Solution::max_profit(i2, i1));
         }
     }
 }
