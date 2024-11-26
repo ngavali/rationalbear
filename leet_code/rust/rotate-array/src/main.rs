@@ -1,5 +1,9 @@
 /* Medium
  * https://leetcode.com/problems/rotate-array/
+ *
+ * Traversing all elements and moving it to its target postition after the shift
+ * Detect cycles
+ *
  */
 
 struct Solution;
