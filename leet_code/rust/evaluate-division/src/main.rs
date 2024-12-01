@@ -1,3 +1,4 @@
+#![feature(test)]
 /* Medium
  * https://leetcode.com/problems/evaluate-division/
  */
@@ -77,6 +78,72 @@ impl Solution {
             }
         }
     }
+
+    pub fn calc_equation_other(
+        equations: Vec<Vec<String>>,
+        values: Vec<f64>,
+        queries: Vec<Vec<String>>,
+    ) -> Vec<f64> {
+        use std::collections::HashMap;
+
+        fn dfs_other(
+            graph: &HashMap<String, HashMap<String, f64>>,
+            visited: &mut HashMap<String, bool>,
+            start: &str,
+            end: &str,
+            value: f64,
+        ) -> f64 {
+            if !graph.contains_key(start) || !graph.contains_key(end) {
+                return -1.0;
+            }
+            if start == end {
+                return value;
+            }
+
+            visited.insert(start.to_string(), true);
+            if let Some(neighbors) = graph.get(start) {
+                for (next_node, &weight) in neighbors {
+                    if !visited.contains_key(next_node) {
+                        let result = dfs_other(graph, visited, next_node, end, value * weight);
+                        if result != -1.0 {
+                            return result;
+                        }
+                    }
+                }
+            }
+            -1.0
+        }
+
+        let mut graph: HashMap<String, HashMap<String, f64>> = HashMap::new();
+
+        // Build the graph
+        for i in 0..equations.len() {
+            let a = &equations[i][0];
+            let b = &equations[i][1];
+            let value = values[i];
+
+            graph
+                .entry(a.clone())
+                .or_insert_with(HashMap::new)
+                .insert(b.clone(), value);
+            graph
+                .entry(b.clone())
+                .or_insert_with(HashMap::new)
+                .insert(a.clone(), 1.0 / value);
+        }
+
+        // Answer each query
+        let mut result = Vec::new();
+        for query in queries {
+            let c = &query[0];
+            let d = &query[1];
+            let mut visited = HashMap::new();
+            let res = dfs_other(&graph, &mut visited, c, d, 1.0);
+            result.push(res);
+        }
+
+        result
+    }
 }
 
 #[cfg(test)]
@@ -84,9 +151,8 @@ impl Solution {
 mod tests {
     use crate::Solution;
 
-    #[test]
-    fn test_calc_equation() {
-        let test_cases = vec![
+    fn test_cases() -> Vec<(Vec<Vec<String>>, Vec<f64>, Vec<Vec<String>>, Vec<f64>)> {
+        vec![
             (
                 vec![
                     vec![String::from("a"), String::from("b")],
@@ -142,10 +208,50 @@ mod tests {
                 ],
                 vec![0.50000, 2.00000, -1.00000, -1.00000],
             ),
-        ];
+        ]
+    }
 
+    #[test]
+    fn test_calc_equation() {
+        let test_cases = test_cases();
         for (equations, values, queries, output) in test_cases {
             assert_eq!(output, Solution::calc_equation(equations, values, queries));
         }
     }
+
+    extern crate test;
+    use test::Bencher;
+    #[bench]
+    fn bench_mysolution(b: &mut Bencher) {
+        b.iter(|| {
+            for (equations, values, queries, output) in test_cases() {
+                assert_eq!(output, Solution::calc_equation(equations, values, queries));
+            }
+        });
+    }
+    #[bench]
+    fn bench_othersolution(b: &mut Bencher) {
+        b.iter(|| {
+            for (equations, values, queries, output) in test_cases() {
+                assert_eq!(
+                    output,
+                    Solution::calc_equation_other(equations, values, queries)
+                );
+            }
+        });
+    }
 }
+
+/* Benchmarks
+ *
+ * $ rustup run nightly cargo bench
+ * Finished `bench` profile [optimized] target(s) in 0.00s
+ * Running unittests src/main.rs (target/release/deps/evaluate_division-d00a26a6c189747e)
+ * running 3 tests
+ * test tests::test_calc_equation ... ignored
+ * test tests::bench_mysolution    ... bench:       7,331.27 ns/iter (+/- 108.74)
+ * test tests::bench_othersolution ... bench:       7,838.72 ns/iter (+/- 157.56)
+ *
+ * test result: ok. 0 passed; 0 failed; 1 ignored; 2 measured; 0 filtered out; finished in 8.44s
+ *
+ */
