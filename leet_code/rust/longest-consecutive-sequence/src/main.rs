@@ -272,6 +272,7 @@ mod tests {
 /*
  * BenchMark results (Distinct numbers) .. Choosing HashSet
  *
+ * $ rustup run nightly cargo bench
  *
  * running 10 tests
  * test tests::test_longest_consecutive ... ignored
