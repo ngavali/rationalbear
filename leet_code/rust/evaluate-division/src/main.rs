@@ -4,7 +4,7 @@
  */
 
 struct Solution;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 impl Solution {
     pub fn calc_equation(
@@ -79,6 +79,64 @@ impl Solution {
         }
     }
 
+    pub fn calc_equation_bfs(
+        equations: Vec<Vec<String>>,
+        values: Vec<f64>,
+        queries: Vec<Vec<String>>,
+    ) -> Vec<f64> {
+        let mut graph_map: HashMap<String, HashMap<String, f64>> =
+            HashMap::with_capacity(equations.len());
+
+        equations.iter().enumerate().for_each(|(i, eq)| {
+            graph_map
+                .entry(eq[0].clone())
+                .or_insert(HashMap::new())
+                .insert(eq[1].clone(), values[i]);
+            graph_map
+                .entry(eq[1].clone())
+                .or_insert(HashMap::new())
+                .insert(eq[0].clone(), 1.0 / values[i]);
+        });
+
+        queries
+            .into_iter()
+            .map(|query| Solution::bfs(&graph_map, &query[0], &query[1]))
+            .collect()
+    }
+
+    fn bfs<'a>(
+        graph_map: &'a HashMap<String, HashMap<String, f64>>,
+        start_key: &'a String,
+        target_key: &String,
+    ) -> f64 {
+        if !graph_map.contains_key(start_key) || !graph_map.contains_key(target_key) {
+            return -1.0;
+        }
+        let mut queue = VecDeque::new();
+        queue.push_back((start_key, 1.0));
+        let mut visited = HashSet::new();
+
+        while !queue.is_empty() {
+            for _ in 0..queue.len() {
+                if let Some((start_key, v)) = queue.pop_front() {
+                    //visited.insert(start_key);    //~7,217.12 ns/iter (+/- 272.79)
+                    if start_key == target_key {
+                        return v;
+                    }
+                    if let Some(list) = graph_map.get(start_key) {
+                        for (next_key, nv) in list.iter() {
+                            if !visited.contains(next_key) {
+                                queue.push_back((next_key, v * nv));
+                            }
+                        }
+                    }
+                    visited.insert(start_key); //~6,764.25 ns/iter (+/- 173.53)
+                }
+            }
+        }
+        -1.0
+    }
+
     pub fn calc_equation_other(
         equations: Vec<Vec<String>>,
         values: Vec<f64>,
@@ -144,6 +202,25 @@ impl Solution {
 
         result
     }
+}
+
+fn main() {
+    println!(
+        "{:?}",
+        Solution::calc_equation(
+            vec![
+                vec![String::from("a"), String::from("b")],
+                vec![String::from("c"), String::from("d")],
+            ],
+            vec![1.0, 1.0],
+            vec![
+                vec![String::from("a"), String::from("c")],
+                vec![String::from("b"), String::from("d")],
+                vec![String::from("b"), String::from("a")],
+                vec![String::from("d"), String::from("c")],
+            ]
+        )
+    );
 }
 
 #[cfg(test)]
@@ -226,6 +303,17 @@ mod tests {
         b.iter(|| {
             for (equations, values, queries, output) in test_cases() {
                 assert_eq!(output, Solution::calc_equation(equations, values, queries));
+            }
+        });
+    }
+    #[bench]
+    fn bench_mysolution_bfs(b: &mut Bencher) {
+        b.iter(|| {
+            for (equations, values, queries, output) in test_cases() {
+                assert_eq!(
+                    output,
+                    Solution::calc_equation_bfs(equations, values, queries)
+                );
             }
         });
     }
