@@ -3,44 +3,49 @@
  * https://leetcode.com/problems/regular-expression-matching/
  */
 
-struct Solution {}
+struct Solution;
 
 impl Solution {
     fn dfs(s: &Vec<u8>, p: &Vec<u8>, i: usize, j: usize, mem_table: &mut Vec<Vec<i32>>) -> bool {
-        if j >= s.len() && i >= p.len() {
-            return true;
-        }
-
+        println!("{i} {j}");
         if i >= p.len() {
+            if j >= s.len() {
+                return true;
+            }
             return false;
         }
 
-        if j < s.len() && i < p.len() {
-            if mem_table[i][j] != -1 {
-                return match mem_table[i][j] {
-                    0 => false,
-                    _ => true,
-                };
-            }
+        if mem_table[i][j] != -1 {
+            println!(" Mem-> {i} {j}");
+            return match mem_table[i][j] {
+                0 => false,
+                _ => true,
+            };
         }
 
         let m = j < s.len() && (p[i] == s[j] || p[i] as char == '.');
 
+        //Check if next is Kleene star
         if (i + 1) < p.len() && p[i + 1] as char == '*' {
-            return match Solution::dfs(s, p, i + 2, j, mem_table)
-                || (m && Solution::dfs(s, p, i, j + 1, mem_table))
-            {
+            //If yes then
+            return match
+                //Either Skip it entirely (i.e, Zero Match and proceed to next character in Pattern)
+                Solution::dfs(s, p, i + 2, j, mem_table)
+                ||
+                //Or Use it to make One Match and Proceed to see if next also Matches in Text
+                (m && Solution::dfs(s, p, i, j + 1, mem_table)) {
                 true => {
                     mem_table[i][j] = 1;
                     true
-                }
-                false => {
+                },
+                false =>  {
                     mem_table[i][j] = 0;
                     false
                 }
             };
         }
 
+        //If it wasn't Kleene star, let proceed with Character by Character Match instead
         match m {
             true => match Solution::dfs(s, p, i + 1, j + 1, mem_table) {
                 true => {
@@ -202,8 +207,10 @@ impl SolutionOldNotWorking {
 
 fn main() {
     for (i, (s, p, r)) in test_cases().into_iter().enumerate() {
-        println!("TestCase #{i}");
-        println!("Expected {} -> Got {}", r, Solution::is_match(s, p));
+        if i == 9 {
+            println!("TestCase #{i}");
+            println!("Expected {} -> Got {}", r, Solution::is_match(s, p));
+        }
     }
 }
 
@@ -218,6 +225,11 @@ fn test_cases() -> Vec<(String, String, bool)> {
         ("aab".to_string(), "c*a*b".to_string(), true),
         ("aaa".to_string(), "a*a".to_string(), true),
         ("a".to_string(), "ab*".to_string(), true),
+        (
+            "aaaaaabbbbbc".to_string(),
+            "a*a*a*a*a*b*cd".to_string(),
+            false,
+        ),
         ("aaa".to_string(), "aaaa".to_string(), false),
         (
             "aaaaaaaaaaaaaaaaaaa".to_string(),
@@ -266,3 +278,16 @@ mod tests {
         });
     }
 }
+/*
+ *
+$ rustup run nightly cargo bench
+
+running 4 tests
+test tests::test_match ... ignored
+test tests::test_match_nomemo ... ignored
+test tests::bench_match        ... bench:      31,981.00 ns/iter (+/- 1,398.34)
+test tests::bench_match_nomemo ... bench:  21,264,387.50 ns/iter (+/- 315,676.63)
+
+test result: ok. 0 passed; 0 failed; 2 ignored; 2 measured; 0 filtered out; finished in 12.46s
+
+*/
