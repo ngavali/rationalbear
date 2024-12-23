@@ -1,6 +1,8 @@
+#![feature(test)]
 /* Hard
  * https://leetcode.com/problems/regular-expression-matching/
  */
+
 struct Solution {}
 
 impl Solution {
@@ -61,6 +63,35 @@ impl Solution {
         let (s, p) = (s.as_bytes().to_vec(), p.as_bytes().to_vec());
         let mut mem_table = vec![vec![-1; s.len() + 1]; p.len()];
         Solution::dfs(&s, &p, 0, 0, &mut mem_table)
+    }
+}
+
+struct SolutionNoMemo {}
+
+impl SolutionNoMemo {
+    fn dfs(s: &Vec<u8>, p: &Vec<u8>, i: usize, j: usize, mem_table: &mut Vec<Vec<i32>>) -> bool {
+        if j >= s.len() && i >= p.len() {
+            return true;
+        }
+
+        if i >= p.len() {
+            return false;
+        }
+
+        let m = j < s.len() && (p[i] == s[j] || p[i] as char == '.');
+
+        if (i + 1) < p.len() && p[i + 1] as char == '*' {
+            return SolutionNoMemo::dfs(s, p, i + 2, j, mem_table)
+                || (m && SolutionNoMemo::dfs(s, p, i, j + 1, mem_table));
+        }
+
+        m && SolutionNoMemo::dfs(s, p, i + 1, j + 1, mem_table)
+    }
+
+    pub fn is_match(s: String, p: String) -> bool {
+        let (s, p) = (s.as_bytes().to_vec(), p.as_bytes().to_vec());
+        let mut mem_table = vec![vec![-1; s.len() + 1]; p.len()];
+        SolutionNoMemo::dfs(&s, &p, 0, 0, &mut mem_table)
     }
 }
 
@@ -188,12 +219,17 @@ fn test_cases() -> Vec<(String, String, bool)> {
         ("aaa".to_string(), "a*a".to_string(), true),
         ("a".to_string(), "ab*".to_string(), true),
         ("aaa".to_string(), "aaaa".to_string(), false),
+        (
+            "aaaaaaaaaaaaaaaaaaa".to_string(),
+            "a*a*a*a*a*a*a*a*a*b".to_string(),
+            false,
+        ),
     ]
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{test_cases, Solution};
+    use crate::{test_cases, Solution, SolutionNoMemo};
 
     #[test]
     fn test_match() {
@@ -201,5 +237,32 @@ mod tests {
             println!("TestCase #{i}");
             assert_eq!(r, Solution::is_match(s, p));
         }
+    }
+    #[test]
+    fn test_match_nomemo() {
+        for (i, (s, p, r)) in test_cases().into_iter().enumerate() {
+            println!("TestCase #{i}");
+            assert_eq!(r, SolutionNoMemo::is_match(s, p));
+        }
+    }
+
+    extern crate test;
+    use test::Bencher;
+
+    #[bench]
+    fn bench_match(b: &mut Bencher) {
+        b.iter(|| {
+            for (i, (s, p, r)) in test_cases().into_iter().enumerate() {
+                assert_eq!(r, Solution::is_match(s, p));
+            }
+        });
+    }
+    #[bench]
+    fn bench_match_nomemo(b: &mut Bencher) {
+        b.iter(|| {
+            for (i, (s, p, r)) in test_cases().into_iter().enumerate() {
+                assert_eq!(r, SolutionNoMemo::is_match(s, p));
+            }
+        });
     }
 }
