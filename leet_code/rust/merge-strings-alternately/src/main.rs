@@ -1,3 +1,6 @@
+/* Easy
+ * https://leetcode.com/problems/merge-strings-alternately/
+ */
 #![feature(test)]
 struct Solution;
 
