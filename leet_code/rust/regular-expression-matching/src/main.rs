@@ -7,7 +7,7 @@ struct Solution;
 
 impl Solution {
     fn dfs(s: &Vec<u8>, p: &Vec<u8>, i: usize, j: usize, mem_table: &mut Vec<Vec<i32>>) -> bool {
-        println!("{i} {j}");
+        println!("{j} {i}");
         if i >= p.len() {
             if j >= s.len() {
                 return true;
@@ -16,7 +16,7 @@ impl Solution {
         }
 
         if mem_table[i][j] != -1 {
-            println!(" Mem-> {i} {j}");
+            println!(" Mem-> {j} {i}");
             return match mem_table[i][j] {
                 0 => false,
                 _ => true,
@@ -25,15 +25,24 @@ impl Solution {
 
         let m = j < s.len() && (p[i] == s[j] || p[i] as char == '.');
 
+        println!(" {j} {i} -> Match -> {m}");
         //Check if next is Kleene star
         if (i + 1) < p.len() && p[i + 1] as char == '*' {
+            println!(" * -> ");
             //If yes then
-            return match
+                let r = Solution::dfs(s, p,i + 2, j, mem_table);
+                println!("  {j} {i} ->  Right -> {r}");
+                let l = m && Solution::dfs(s, p, i, j + 1, mem_table);
+                println!("  {j} {i} ->  Left -> {l} Right -> {r}");
+            return 
                 //Either Skip it entirely (i.e, Zero Match and proceed to next character in Pattern)
-                Solution::dfs(s, p, i + 2, j, mem_table)
+                /*
+                Solution::dfs(s, p,i + 2, j, mem_table);
                 ||
                 //Or Use it to make One Match and Proceed to see if next also Matches in Text
-                (m && Solution::dfs(s, p, i, j + 1, mem_table)) {
+                (m && Solution::dfs(s, p, i, j + 1, mem_table)) 
+                */
+                match l || r {
                 true => {
                     mem_table[i][j] = 1;
                     true
@@ -46,6 +55,7 @@ impl Solution {
         }
 
         //If it wasn't Kleene star, let proceed with Character by Character Match instead
+        println!(" {j} {i} -> Match -> {m} .|c -> ");
         match m {
             true => match Solution::dfs(s, p, i + 1, j + 1, mem_table) {
                 true => {
@@ -208,7 +218,7 @@ impl SolutionOldNotWorking {
 fn main() {
     for (i, (s, p, r)) in test_cases().into_iter().enumerate() {
         if i == 9 {
-            println!("TestCase #{i}");
+            println!("TestCase #{i} {s} {p}");
             println!("Expected {} -> Got {}", r, Solution::is_match(s, p));
         }
     }
@@ -225,11 +235,7 @@ fn test_cases() -> Vec<(String, String, bool)> {
         ("aab".to_string(), "c*a*b".to_string(), true),
         ("aaa".to_string(), "a*a".to_string(), true),
         ("a".to_string(), "ab*".to_string(), true),
-        (
-            "aaaaaabbbbbc".to_string(),
-            "a*a*a*a*a*b*cd".to_string(),
-            false,
-        ),
+        ("abc".to_string(), "a*a*b*cd".to_string(), false),
         ("aaa".to_string(), "aaaa".to_string(), false),
         (
             "aaaaaaaaaaaaaaaaaaa".to_string(),
