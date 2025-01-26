@@ -21,15 +21,13 @@ impl ListNode {
 }
 
 impl Solution {
-    fn reverse_ll<'a>(
+    fn reverse_ll(
         mut curr_iter: Option<Box<ListNode>>,
         mut prev: Option<Box<ListNode>>,
     ) -> Option<Box<ListNode>> {
         while let Some(mut curr_node) = curr_iter {
-            let next_node = curr_node.next.take();
-            curr_node.next = prev;
+            (curr_node.next, curr_iter) = (prev, curr_node.next.take());
             prev = Some(curr_node);
-            curr_iter = next_node;
         }
         prev
     }
