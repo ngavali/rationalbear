@@ -22,12 +22,9 @@ impl ListNode {
 
 impl Solution {
     fn reverse_ll<'a>(
-        head: Option<Box<ListNode>>,
-        tail: Option<Box<ListNode>>,
+        mut curr_iter: Option<Box<ListNode>>,
+        mut prev: Option<Box<ListNode>>,
     ) -> Option<Box<ListNode>> {
-        let mut prev = tail;
-        let mut curr_iter = head;
-
         while let Some(mut curr_node) = curr_iter {
             let next_node = curr_node.next.take();
             curr_node.next = prev;
@@ -67,7 +64,6 @@ impl Solution {
                     }
                 }
                 false => {
-                    cont = false;
                     curr.as_mut().unwrap().next = start;
                     break;
                 }
@@ -81,7 +77,7 @@ impl Solution {
 fn main() {
     for (i, (head, k, mut exp_o)) in testcase().into_iter().enumerate() {
         let mut got = Solution::reverse_k_group(head, k);
-        println!("DONE!!!");
+        println!("Testcase #{i}");
         while let Some(node) = got.clone() {
             if let Some(exp_o_node) = exp_o.clone() {
                 assert_eq!(exp_o_node.val, node.val);
@@ -143,6 +139,7 @@ mod tests {
     #[test]
     fn test_reverse_k_group() {
         for (i, (head, k, mut exp_o)) in testcase().into_iter().enumerate() {
+            println!("Testcase #{i}");
             let mut got = Solution::reverse_k_group(head, k);
             while let Some(node) = got.clone() {
                 if let Some(exp_o_node) = exp_o.clone() {
