@@ -1,16 +1,53 @@
+#![feature(test)]
 /* Medium
  * https://leetcode.com/problems/course-schedule/
  *
- * TODO: Kahn's Algorithm
  */
 
 struct Solution;
+struct SolutionKahn;
 
 #[derive(Clone, PartialEq)]
 enum State {
     None,
     Visited,
     Terminated,
+}
+
+impl SolutionKahn {
+    //Kahn's Algorithm
+    pub fn can_finish(num_courses: i32, prerequisites: Vec<Vec<i32>>) -> bool {
+        let num_courses = num_courses as usize;
+        let mut visited_nodes = 0;
+        let mut dependency_graph: Vec<Vec<usize>> = vec![vec![]; num_courses];
+        let mut in_degree = vec![0; num_courses];
+
+        for course in prerequisites {
+            dependency_graph[course[1] as usize].push(course[0] as usize);
+            in_degree[course[0] as usize] += 1;
+        }
+
+        let mut queue_0 = Vec::new();
+        for (node, node_in_degree) in in_degree.iter().enumerate() {
+            if *node_in_degree == 0 {
+                queue_0.push(node);
+            }
+        }
+
+        while !queue_0.is_empty() {
+            let node = queue_0.pop().unwrap();
+            visited_nodes += 1;
+
+            for next_node in dependency_graph[node].iter() {
+                in_degree[*next_node] -= 1;
+                if in_degree[*next_node] == 0 {
+                    queue_0.push(*next_node);
+                }
+            }
+        }
+
+        visited_nodes == num_courses
+    }
 }
 
 impl Solution {
@@ -78,7 +115,6 @@ fn main() {
 
 fn testcase() -> Vec<(i32, Vec<Vec<i32>>, bool)> {
     vec![
-        (1, vec![], true),
         (
             20,
             vec![
@@ -95,6 +131,7 @@ fn testcase() -> Vec<(i32, Vec<Vec<i32>>, bool)> {
         ),
         (2, vec![vec![1, 0]], true),
         (2, vec![vec![1, 0], vec![0, 1]], false),
+        (1, vec![], true),
         (
             5,
             vec![vec![1, 4], vec![2, 4], vec![3, 1], vec![3, 2]],
@@ -2123,15 +2160,52 @@ fn testcase() -> Vec<(i32, Vec<Vec<i32>>, bool)> {
 
 #[cfg(test)]
 mod tests {
-    use crate::Solution;
+    use crate::{Solution, SolutionKahn};
 
     use super::testcase;
 
     #[test]
-    fn test_can_finish() {
+    fn test_can_finish_dfs_cycles() {
         for (i, (num_courses, prerequisites, exp_output)) in testcase().into_iter().enumerate() {
             println!("Testcase #{i}\nInput->\n num_courses={num_courses}\n prerequisites={prerequisites:?}");
             assert_eq!(exp_output, Solution::can_finish(num_courses, prerequisites));
         }
+    }
+
+    #[test]
+    fn test_can_finish_kahn() {
+        for (i, (num_courses, prerequisites, exp_output)) in testcase().into_iter().enumerate() {
+            println!("Testcase #{i}\nInput->\n num_courses={num_courses}\n prerequisites={prerequisites:?}");
+            assert_eq!(
+                exp_output,
+                SolutionKahn::can_finish(num_courses, prerequisites)
+            );
+        }
+    }
+
+    extern crate test;
+    use test::Bencher;
+
+    #[bench]
+    fn bench_can_finish_dfs_cycles(b: &mut Bencher) {
+        b.iter(|| {
+            for (i, (num_courses, prerequisites, exp_output)) in testcase().into_iter().enumerate()
+            {
+                assert_eq!(exp_output, Solution::can_finish(num_courses, prerequisites));
+            }
+        });
+    }
+
+    #[bench]
+    fn bench_can_finish_kahn(b: &mut Bencher) {
+        b.iter(|| {
+            for (i, (num_courses, prerequisites, exp_output)) in testcase().into_iter().enumerate()
+            {
+                assert_eq!(
+                    exp_output,
+                    SolutionKahn::can_finish(num_courses, prerequisites)
+                );
+            }
+        });
     }
 }
