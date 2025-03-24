@@ -2,10 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meditate/app/meditation_settings.dart';
-import 'package:meditate/app/progress_bar_graph.dart';
 import 'package:meditate/app/progress_screen.dart';
+import 'package:meditate/app/reminder_screen.dart';
+import 'package:meditate/app/notification_service.dart';
+import 'package:meditate/app/permission_notify.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService().initialize();
   runApp(const MeditationApp());
 }
 
@@ -15,6 +19,27 @@ class MeditationApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(
+        fontFamily: 'FunelSans',
+        /*textTheme: TextTheme(
+        displayLarge: TextStyle(fontFamily: 'Roboto'),
+        displayMedium: TextStyle(fontFamily: 'Roboto'),
+        displaySmall: TextStyle(fontFamily: 'Roboto'),
+        headlineLarge: TextStyle(fontFamily: 'Roboto'),
+        headlineMedium: TextStyle(fontFamily: 'Roboto'),
+        headlineSmall: TextStyle(fontFamily: 'Roboto'),
+        titleLarge: TextStyle(fontFamily: 'Roboto'),
+        titleMedium: TextStyle(fontFamily: 'Roboto'),
+        titleSmall: TextStyle(fontFamily: 'Roboto'),
+        bodyLarge: TextStyle(fontFamily: 'Roboto'),
+        bodyMedium: TextStyle(fontFamily: 'Roboto'),
+        bodySmall: TextStyle(fontFamily: 'Roboto'),
+        labelLarge: TextStyle(fontFamily: 'Roboto'),
+        labelMedium: TextStyle(fontFamily: 'Roboto'),
+        labelSmall: TextStyle(fontFamily: 'Roboto'),
+        ),
+        */
+      ),
       debugShowCheckedModeBanner: false,
       home: HomeScreen(),
     );
@@ -46,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Meditation App'),
+        title: Text('Good Life'),
       ),
       body: Center(
         child: Column(
@@ -57,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                 // Meditation Icon
                 Column(
-                children: [
+                  children: [
                      AnimatedIconButton(
                       icon:Icons.self_improvement,
                       color: Colors.indigo,
@@ -71,7 +96,8 @@ class _HomeScreenState extends State<HomeScreen> {
                      ),
                   ],
                 ),
-                SizedBox(width: 40), // Space between icons
+
+                SizedBox(width: 20), // Space between icons
                 // Progress Icon
                 Column(
                   children: [
@@ -88,6 +114,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
+                SizedBox(width: 20), // Space between icons
+                // Reminder Icon
+                Column(
+                  children: [
+                    AnimatedIconButton(
+                      icon: Icons.notifications_active,
+                      color: Colors.pink,
+                      label: 'Remind Me',
+                      onPressed: () {
+                        checkAndRequestPermission();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ReminderScreen()),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ],
             ),
             SizedBox(height: 20),
@@ -98,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                     Text(
-                      'Last 3 Sessions:',
+                      'Past 3 Sessions',
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     ...lastSessions.map((session) => Text(

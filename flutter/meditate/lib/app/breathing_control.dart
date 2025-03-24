@@ -48,7 +48,7 @@ class _BreathControlScreenState extends State<BreathControlScreen> with SingleTi
   }
 
   void _playSelectedSound() async {
-    String soundFile = '${widget.selectedSound.toLowerCase().replaceAll(' ', '_')}.mp4';
+    String soundFile = 'music/${widget.selectedSound.toLowerCase().replaceAll(' ', '_')}.mp4';
     await _audioPlayer.play(AssetSource(soundFile));
     _audioPlayer.setReleaseMode(ReleaseMode.loop); // Loop the sound
   }
@@ -83,7 +83,7 @@ class _BreathControlScreenState extends State<BreathControlScreen> with SingleTi
       if (mounted && !isEnding) {
         setState(() {
           double baseSize = 150;
-          double expandedSize = 200; // Reduced from 250 to 200
+          double expandedSize = 250; // Reduced from 250 to 200
           double size = lastSize;
           if (currentPhase == 0) {
             size = baseSize + (expandedSize - baseSize) * (1 - remainingTime / inhaleDuration);
@@ -173,7 +173,7 @@ class _BreathControlScreenState extends State<BreathControlScreen> with SingleTi
   }
 
   Color getPhaseColor() {
-    return currentPhase == 0 ? Colors.blue: currentPhase == 1 ? Colors.indigo : Colors.green;
+    return currentPhase == 0 ? Colors.red: currentPhase == 1 ? Colors.black : Colors.pink;
   }
 
   @override

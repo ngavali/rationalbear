@@ -6,7 +6,7 @@ class ProgressScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Your Progress'),
+        title: Text('My Progress'),
       ),
       body: Center(
         child: Container(
