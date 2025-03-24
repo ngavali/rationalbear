@@ -9,9 +9,6 @@ class ReminderScreen extends StatefulWidget {
 
 class _ReminderScreenState extends State<ReminderScreen> {
   final ReminderService _reminderService = ReminderService();
-  final TextEditingController _messageController = TextEditingController();
-  TimeOfDay? _selectedTime;
-
   List<Reminder> _reminders = [];
 
   @override
@@ -27,24 +24,24 @@ class _ReminderScreenState extends State<ReminderScreen> {
     });
   }
 
-  Future<void> _addReminder() async {
-    if (_selectedTime == null || _messageController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please select time and enter a message')));
-      return;
-    }
-    
-    final now = DateTime.now();
-    final scheduledTime = DateTime(now.year, now.month, now.day, _selectedTime!.hour, _selectedTime!.minute);
-    final reminder = Reminder(
-      id: (DateTime.now().millisecondsSinceEpoch % 2147483647).toInt(),
-      message: _messageController.text,
-      time: scheduledTime,
+  Future<void> _createReminder() async {
+    TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
     );
 
-    await _reminderService.addReminder(reminder);
-    _messageController.clear();
-    _selectedTime = null;
-    _loadReminders();
+    if (pickedTime != null) {
+      final now = DateTime.now();
+      final scheduledTime = DateTime(now.year, now.month, now.day, pickedTime.hour, pickedTime.minute);
+      final reminder = Reminder(
+        id: (DateTime.now().millisecondsSinceEpoch % 2147483647).toInt(),
+        message: 'Time to meditate!!!',
+        time: scheduledTime,
+      );
+
+      await _reminderService.addReminder(reminder);
+      _loadReminders();
+    }
   }
 
   Future<void> _deleteReminder(int id) async {
@@ -60,43 +57,13 @@ class _ReminderScreenState extends State<ReminderScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _messageController,
-                  decoration: InputDecoration(labelText: 'Enter Reminder Message'),
-                ),
-                SizedBox(height: 10),
-                Row(
-                  children: [
-                    Text(
-                      _selectedTime == null 
-                        ? 'No time selected' 
-                        : 'Selected Time: ${_selectedTime!.format(context)}',
-                    ),
-                    Spacer(),
-                    ElevatedButton(
-                      onPressed: () async {
-                        TimeOfDay? pickedTime = await showTimePicker(
-                          context: context,
-                          initialTime: TimeOfDay.now(),
-                        );
-                        if (pickedTime != null) {
-                          setState(() {
-                            _selectedTime = pickedTime;
-                          });
-                        }
-                      },
-                      child: Text('Pick Time'),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _addReminder,
-                  child: Text('Add Reminder'),
-                ),
-              ],
+            child: ElevatedButton(
+              onPressed: _createReminder,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueGrey,
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Create a Reminder'),
             ),
           ),
           Expanded(
@@ -105,12 +72,16 @@ class _ReminderScreenState extends State<ReminderScreen> {
               itemBuilder: (context, index) {
                 final reminder = _reminders[index];
                 return ListTile(
-                  title: Text(reminder.message),
-                  subtitle: Text('Time: ${reminder.time.hour}:${reminder.time.minute}'),
+                  title: Text('Reminder at ${reminder.time.hour}:${reminder.time.minute} - ${reminder.message}'),
                   trailing: IconButton(
                     icon: Icon(Icons.delete, color: Colors.red),
                     onPressed: () => _deleteReminder(reminder.id),
                   ),
+                  tileColor: Colors.grey[100],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 );
               },
             ),
@@ -120,4 +91,3 @@ class _ReminderScreenState extends State<ReminderScreen> {
     );
   }
 }
-

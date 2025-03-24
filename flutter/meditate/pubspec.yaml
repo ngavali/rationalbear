@@ -32,11 +32,15 @@ dependencies:
     sdk: flutter
   audioplayers: ^5.2.1
   fl_chart: ^0.66.0
+  flutter_local_notifications: ^17.1.2
+  timezone: ^0.9.2
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.5.2
+  permission_handler: ^11.4.0
+  confetti: ^0.8.0
 
 dev_dependencies:
   flutter_test:
@@ -57,9 +61,34 @@ flutter:
 
   # App related assets
   assets:
-    - assets/calming_music.mp4
-    - assets/morning.mp4
-    - assets/night.mp4
+    - assets/music/
+
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto/Roboto-Bold.ttf
+          weight: 700
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter/Inter_28pt-Regular.ttf
+        - asset: assets/fonts/Inter/Inter_28pt-Bold.ttf
+          weight: 700
+    - family: Hind
+      fonts:
+        - asset: assets/fonts/Hind/Hind-Regular.ttf
+        - asset: assets/fonts/Hind/Hind-Bold.ttf
+          weight: 700
+    - family: FunelSans
+      fonts:
+        - asset: assets/fonts/Funnel_Sans/FunnelSans-Regular.ttf
+        - asset: assets/fonts/Funnel_Sans/FunnelSans-Bold.ttf
+          weight: 700
+
+  #  music:
+  #   - asset: assets/music/calming_music.mp4
+  #   - asset: assets/music/morning.mp4
+  #   - asset: assets/music/night.mp4
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

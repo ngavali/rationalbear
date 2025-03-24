@@ -21,24 +21,6 @@ class MeditationApp extends StatelessWidget {
     return MaterialApp(
       theme: ThemeData(
         fontFamily: 'FunelSans',
-        /*textTheme: TextTheme(
-        displayLarge: TextStyle(fontFamily: 'Roboto'),
-        displayMedium: TextStyle(fontFamily: 'Roboto'),
-        displaySmall: TextStyle(fontFamily: 'Roboto'),
-        headlineLarge: TextStyle(fontFamily: 'Roboto'),
-        headlineMedium: TextStyle(fontFamily: 'Roboto'),
-        headlineSmall: TextStyle(fontFamily: 'Roboto'),
-        titleLarge: TextStyle(fontFamily: 'Roboto'),
-        titleMedium: TextStyle(fontFamily: 'Roboto'),
-        titleSmall: TextStyle(fontFamily: 'Roboto'),
-        bodyLarge: TextStyle(fontFamily: 'Roboto'),
-        bodyMedium: TextStyle(fontFamily: 'Roboto'),
-        bodySmall: TextStyle(fontFamily: 'Roboto'),
-        labelLarge: TextStyle(fontFamily: 'Roboto'),
-        labelMedium: TextStyle(fontFamily: 'Roboto'),
-        labelSmall: TextStyle(fontFamily: 'Roboto'),
-        ),
-        */
       ),
       debugShowCheckedModeBanner: false,
       home: HomeScreen(),
@@ -85,25 +67,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                      AnimatedIconButton(
                       icon:Icons.self_improvement,
-                      color: Colors.indigo,
+                      color: Colors.teal.shade400,
                       label: 'Meditate',
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => MeditationSettingsScreen()),
-                                    ).then((_) => _loadLastSessions());
-                                  },
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => MeditationSettingsScreen()),
+                        ).then((_) => _loadLastSessions());
+                      },
                      ),
                   ],
                 ),
-
-                SizedBox(width: 20), // Space between icons
+                SizedBox(width: 20),
                 // Progress Icon
                 Column(
                   children: [
                      AnimatedIconButton(
                       icon: Icons.bar_chart,
-                      color: Colors.lime,
+                      color: Colors.orangeAccent.shade200,
                       label: 'Progress',
                       onPressed: () {
                         Navigator.push(
@@ -114,13 +95,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                SizedBox(width: 20), // Space between icons
+                SizedBox(width: 20),
                 // Reminder Icon
                 Column(
                   children: [
                     AnimatedIconButton(
                       icon: Icons.notifications_active,
-                      color: Colors.pink,
+                      color: Colors.purple.shade300,
                       label: 'Remind Me',
                       onPressed: () {
                         checkAndRequestPermission();
@@ -136,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             SizedBox(height: 20),
             SizedBox(
-              width: 300, // Adjust as needed
+              width: 300,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -205,3 +186,4 @@ class _AnimatedIconButtonState extends State<AnimatedIconButton> {
     );
   }
 }
+
