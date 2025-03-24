@@ -1,0 +1,48 @@
+class BreathControlScreen extends StatefulWidget {
+  final int sessionDuration;
+  final String selectedSound;
+  final int inhaleDuration;
+  final int holdDuration;
+  final int exhaleDuration;
+
+  const BreathControlScreen({
+    Key? key,
+    required this.sessionDuration,
+    required this.selectedSound,
+    required this.inhaleDuration,
+    required this.holdDuration,
+    required this.exhaleDuration,
+  }) : super(key: key);
+
+  @override
+  _BreathControlScreenState createState() => _BreathControlScreenState();
+}
+
+class _BreathControlScreenState extends State<BreathControlScreen> with SingleTickerProviderStateMixin {
+  late int inhaleDuration;
+  late int holdDuration;
+  late int exhaleDuration;
+  int currentPhase = 0;
+  int remainingTime = 0;
+  double lastSize = 150;
+  Timer? timer;
+  Timer? sessionTimer;
+  List<Widget> ripples = [];
+  bool isEnding = false;
+  bool showFinishedText = false;
+  int actualMeditationTime = 0;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  @override
+  void initState() {
+    super.initState();
+    inhaleDuration = widget.inhaleDuration;
+    holdDuration = widget.holdDuration;
+    exhaleDuration = widget.exhaleDuration;
+    startBreathingCycle();
+    generateRipples();
+    startSessionTimer();
+    _playSelectedSound();
+  }
+}
+

@@ -9,17 +9,27 @@ import 'package:audioplayers/audioplayers.dart';
 class BreathControlScreen extends StatefulWidget {
   final int sessionDuration;
   final String selectedSound;
+  final int inhaleDuration;
+  final int holdDuration;
+  final int exhaleDuration;
 
-  const BreathControlScreen({Key? key, required this.sessionDuration, required this.selectedSound}) : super(key: key);
+  const BreathControlScreen({
+    Key? key,
+    required this.sessionDuration,
+    required this.selectedSound,
+    required this.inhaleDuration,
+    required this.holdDuration,
+    required this.exhaleDuration,
+  }) : super(key: key);
 
   @override
   _BreathControlScreenState createState() => _BreathControlScreenState();
 }
 
 class _BreathControlScreenState extends State<BreathControlScreen> with SingleTickerProviderStateMixin {
-  int inhaleDuration = 4;
-  int holdDuration = 7;
-  int exhaleDuration = 8;
+  late int inhaleDuration;
+  late int holdDuration;
+  late int exhaleDuration;
   int currentPhase = 0;
   int remainingTime = 0;
   double lastSize = 150;
@@ -34,10 +44,12 @@ class _BreathControlScreenState extends State<BreathControlScreen> with SingleTi
   @override
   void initState() {
     super.initState();
+    inhaleDuration = widget.inhaleDuration;
+    holdDuration = widget.holdDuration;
+    exhaleDuration = widget.exhaleDuration;
     startBreathingCycle();
     generateRipples();
     startSessionTimer();
-//    _playCalmingSound();
     _playSelectedSound();
   }
 
@@ -156,6 +168,13 @@ class _BreathControlScreenState extends State<BreathControlScreen> with SingleTi
     });
     _saveSession();
     _updateProgress(actualMeditationTime);
+
+    if (actualMeditationTime >= widget.sessionDuration * 60 ) {
+        ScaffoldMessenger.of(context).showSnackBar(
+SnackBar(content: Text('Kudos! You Made It through entire Session! 🎉')),
+        );
+    } 
+
     Future.delayed(Duration(seconds: 3), () {
       Navigator.popUntil(context, (route) => route.isFirst); //Return to main screen
       ScaffoldMessenger.of(context).showSnackBar(
@@ -194,6 +213,7 @@ class _BreathControlScreenState extends State<BreathControlScreen> with SingleTi
     return Scaffold(
       appBar: AppBar(
         title: Text('Breath Control'),
+        automaticallyImplyLeading: false,
       ),
       body: Stack(
         alignment: Alignment.center,

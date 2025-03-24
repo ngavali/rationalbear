@@ -20,7 +20,7 @@ class MeditationApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
-        fontFamily: 'FunelSans',
+        fontFamily: 'Inter',
       ),
       debugShowCheckedModeBanner: false,
       home: HomeScreen(),
@@ -67,7 +67,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                      AnimatedIconButton(
                       icon:Icons.self_improvement,
-                      color: Colors.teal.shade400,
+                      color: Colors.deepPurple.shade400,
+                      size: 60,
                       label: 'Meditate',
                       onPressed: () {
                         Navigator.push(
@@ -84,7 +85,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                      AnimatedIconButton(
                       icon: Icons.bar_chart,
-                      color: Colors.orangeAccent.shade200,
+                      color: Colors.lightGreen.shade200,
+                      size: 60,
                       label: 'Progress',
                       onPressed: () {
                         Navigator.push(
@@ -101,7 +103,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     AnimatedIconButton(
                       icon: Icons.notifications_active,
-                      color: Colors.purple.shade300,
+                      color: Colors.deepOrange.shade400,
+                      size: 60,
                       label: 'Remind Me',
                       onPressed: () {
                         checkAndRequestPermission();
@@ -144,6 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
 class AnimatedIconButton extends StatefulWidget {
   final IconData icon;
   final Color color;
+  final double size;
   final String label;
   final VoidCallback onPressed;
 
@@ -151,6 +155,7 @@ class AnimatedIconButton extends StatefulWidget {
     Key? key,
     required this.icon,
     required this.color,
+    required this.size,
     required this.label,
     required this.onPressed,
   }) : super(key: key);
@@ -178,7 +183,7 @@ class _AnimatedIconButtonState extends State<AnimatedIconButton> {
           child: AnimatedScale(
             scale: _scale,
             duration: Duration(milliseconds: 150),
-            child: Icon(widget.icon, size: 80, color: widget.color),
+            child: Icon(widget.icon, size: widget.size, color: widget.color),
           ),
         ),
         Text(widget.label, style: TextStyle(fontSize: 16)),
