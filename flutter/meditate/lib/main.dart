@@ -20,7 +20,7 @@ class MeditationApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
-        fontFamily: 'Inter',
+        fontFamily: 'FunelSans',
       ),
       debugShowCheckedModeBanner: false,
       home: HomeScreen(),

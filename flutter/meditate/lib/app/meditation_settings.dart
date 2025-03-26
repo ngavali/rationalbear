@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:meditate/app/breathing_control.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MeditationSettingsScreen extends StatefulWidget {
   @override
@@ -15,17 +16,22 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
   List<String> breathingTechniques = ['4-7-8', 'Box Breathing', 'Pursed Lip Breathing','Custom'];
   String selectedTechnique = '4-7-8';   
 
-  late int customInhaleTime;
-late int customHoldTime;
-late int customExhaleTime;
+    int customInhaleTime = 0;
+    int customHoldTime = 0;
+    int customExhaleTime = 0;
+    bool calibrationComplete = false;
+    bool showPhase = false;
 
-Stopwatch stopwatch = Stopwatch();
-String currentPhase = 'Inhale'; // Tracks which phase the user is measuring
+late FixedExtentScrollController _scrollController;
 
-  final Map<String, List<int>> techniqueDurations = {
+    Stopwatch stopwatch = Stopwatch();
+    String currentPhase = 'Start'; // Tracks which phase the user is measuring
+
+  late final Map<String, List<int>> techniqueDurations = {
     '4-7-8': [4, 7, 8],
     'Box Breathing': [4, 4, 4],
     'Pursed Lip Breathing': [3, 2, 4],
+    'Custom': <int>[customInhaleTime, customHoldTime, customExhaleTime],
   };
 
   /*
@@ -41,62 +47,127 @@ String currentPhase = 'Inhale'; // Tracks which phase the user is measuring
         ),
 */
 
+@override
+void initState() {
+  super.initState();
+  _scrollController = FixedExtentScrollController(initialItem: sessionDuration - 1);
+  _loadPreferences();
+}
+
+Future<void> _savePreferences() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('selectedTechnique', selectedTechnique);
+  await prefs.setString('selectedSound', selectedSound);
+  await prefs.setInt('sessionDuration', sessionDuration);
+  await prefs.setInt('customInhaleTime', customInhaleTime);
+  await prefs.setInt('customHoldTime', customHoldTime);
+  await prefs.setInt('customExhaleTime', customExhaleTime);
+}
+
+Future<void> _loadPreferences() async {
+  final prefs = await SharedPreferences.getInstance();
+  setState(() {
+    selectedTechnique = prefs.getString('selectedTechnique') ?? '4-7-8';
+    selectedSound = prefs.getString('selectedSound') ?? 'Morning';
+    sessionDuration = prefs.getInt('sessionDuration') ?? 5;
+    print('Loaded -> $sessionDuration');
+    customInhaleTime = prefs.getInt('customInhaleTime') ?? 0;
+    customHoldTime = prefs.getInt('customHoldTime') ?? 0;
+    customExhaleTime = prefs.getInt('customExhaleTime') ?? 0;
+    _scrollController.jumpToItem(sessionDuration - 1);
+    if (customInhaleTime!=0 || customHoldTime!= 0 || customExhaleTime!= 0) {
+        calibrationComplete = true;
+        currentPhase = 'Done';
+    }
+  });
+}
+
 Widget _buildCustomBreathingTracker() {
   if (selectedTechnique != 'Custom') return SizedBox.shrink();
+
+ void _updateSelectedTechnique(String newValue) {
+  setState(() {
+    selectedTechnique = newValue;
+    _savePreferences();
+  });
+}
+
+void _updateSelectedSound(String newValue) {
+  setState(() {
+    selectedSound = newValue;
+    _savePreferences();
+  });
+}
+
+void _updateSessionDuration(int newValue) {
+  setState(() {
+    sessionDuration = newValue;
+    _savePreferences();
+  });
+}
+
 
   String displayTime() {
     final seconds = stopwatch.elapsed.inSeconds;
     return '$seconds sec';
   }
 
-  void startTimer() {
+  void handlePhase() {
     setState(() {
-      stopwatch.reset();
-      stopwatch.start();
-    });
-  }
-
-  void stopTimer() {
-    if (!stopwatch.isRunning) return; // Ensure it was running before stopping
-    stopwatch.stop();
-    final elapsedSeconds = stopwatch.elapsed.inSeconds;
-
-    setState(() {
-      if (currentPhase == 'Inhale') {
-        customInhaleTime = elapsedSeconds;
+      if (currentPhase == 'Start') {
+        stopwatch.reset();
+        stopwatch.start();
+        currentPhase = 'Inhale';
+        showPhase = true;
+      } else if (currentPhase == 'Inhale') {
+        customInhaleTime = stopwatch.elapsed.inSeconds;
+        stopwatch.reset();
+        stopwatch.start();
         currentPhase = 'Hold';
       } else if (currentPhase == 'Hold') {
-        customHoldTime = elapsedSeconds;
+        customHoldTime = stopwatch.elapsed.inSeconds;
+        stopwatch.reset();
+        stopwatch.start();
         currentPhase = 'Exhale';
       } else if (currentPhase == 'Exhale') {
-        customExhaleTime = elapsedSeconds;
-        currentPhase = 'Complete';
-      }
-      stopwatch.reset(); // Reset after stopping
+        customExhaleTime = stopwatch.elapsed.inSeconds;
+        stopwatch.stop();
+        calibrationComplete = true;
+        showPhase = false;
+        currentPhase = 'Done';
+        _savePreferences();
+      } 
     });
   }
 
   return Column(
     children: [
-      Text('Current Phase: $currentPhase', style: TextStyle(fontSize: 20)),
-      Text('Time: ${displayTime()}', style: TextStyle(fontSize: 24)),
-      SizedBox(height: 20),
-      ElevatedButton(
-        onPressed: stopwatch.isRunning ? stopTimer : startTimer,
-        child: Text(stopwatch.isRunning ? 'Stop' : 'Start'),
+      if (calibrationComplete) Text(calibrationComplete ? 'Custom Breath Timings' : currentPhase),
+      if (!calibrationComplete) ElevatedButton(
+        onPressed: currentPhase == 'Done' && !calibrationComplete ? null : handlePhase,
+        child: Text(currentPhase),
       ),
-      if (currentPhase == 'Complete') ...[
+      if (currentPhase == 'Done' && calibrationComplete) ...[
         Text('Inhale: $customInhaleTime sec'),
         Text('Hold: $customHoldTime sec'),
         Text('Exhale: $customExhaleTime sec'),
         ElevatedButton(
+          style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepOrangeAccent.shade200,
+                  foregroundColor: Colors.white,
+                ), 
           onPressed: () => setState(() {
-            currentPhase = 'Inhale';
+            currentPhase = 'Start';
             customInhaleTime = 0;
             customHoldTime = 0;
             customExhaleTime = 0;
+            calibrationComplete = false;
+            showPhase = false;
+            stopwatch.reset();
           }),
-          child: Text('Redo Calibration'),
+          child: Text('Redo Calibration',
+                    style: TextStyle(fontSize:11),
+            ),
         ),
       ],
     ],
@@ -195,21 +266,22 @@ Widget _buildSoundDropdown() {
       ),
       body: Center(
         child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _buildCustomBreathingTracker(),
               Text('Select Breathing Technique', style: TextStyle(fontSize: 18)),
               _buildBreathingTechniqueDropdown(),
-              SizedBox(height: 24),
+              _buildCustomBreathingTracker(),
+              SizedBox(height: 10),
               Text('Select Sound', style: TextStyle(fontSize: 18)),
               _buildSoundDropdown(),
-              SizedBox(height: 24),
+              SizedBox(height: 10),
               Text('Duration', style: TextStyle(fontSize: 18)),
               SizedBox(
-                  height: 80,
+                  height: 50,
                   child: CupertinoPicker(
                     itemExtent: 35,
-                    scrollController: FixedExtentScrollController(initialItem: sessionDuration - 1),
+                    scrollController: _scrollController,//FixedExtentScrollController(initialItem: sessionDuration - 1),
                     onSelectedItemChanged: (index) {
                       setState(() => sessionDuration = index + 1);
                     },
@@ -222,13 +294,14 @@ Widget _buildSoundDropdown() {
                     ),
                   ),
               ),
-              SizedBox(height: 24),
+              SizedBox(height: 10),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurpleAccent,
                   foregroundColor: Colors.white,
                 ), 
                 onPressed: () {
+                  _savePreferences();
                   final durations = techniqueDurations[selectedTechnique]!;
                   Navigator.push(
                     context,
@@ -242,7 +315,7 @@ Widget _buildSoundDropdown() {
                   );
                 },
                 child: Text('Start Session',
-                    style: TextStyle(fontSize:18),
+                    style: TextStyle(fontSize:16),
                 ),
               ),
             
