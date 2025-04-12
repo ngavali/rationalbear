@@ -3,22 +3,32 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 
 class NotificationService {
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
-  Future<void> initialize() async {
+  Future<void> initialize(Function(String?) onNotificationTap) async {
     tz.initializeTimeZones();
 
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-    );
+    final InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
 
-    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        onNotificationTap(response.payload);
+      },
+    );
   }
 
-  Future<void> scheduleNotification(int id, String title, String body, DateTime scheduledTime) async {
+  Future<void> scheduleNotification(
+    int id,
+    String title,
+    String body,
+    DateTime scheduledTime,
+  ) async {
     await flutterLocalNotificationsPlugin.zonedSchedule(
       id,
       title,
@@ -33,7 +43,9 @@ class NotificationService {
       ),
       androidAllowWhileIdle: true,
       androidScheduleMode: AndroidScheduleMode.alarmClock,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      payload: "It's time to meditate",
     );
   }
 
@@ -45,4 +57,3 @@ class NotificationService {
     await flutterLocalNotificationsPlugin.cancelAll();
   }
 }
-

@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meditate/app/ripple_circle.dart';
 import 'package:audioplayers/audioplayers.dart';
 
-
 class BreathControlScreen extends StatefulWidget {
   final int sessionDuration;
   final String selectedSound;
@@ -26,7 +25,8 @@ class BreathControlScreen extends StatefulWidget {
   _BreathControlScreenState createState() => _BreathControlScreenState();
 }
 
-class _BreathControlScreenState extends State<BreathControlScreen> with SingleTickerProviderStateMixin {
+class _BreathControlScreenState extends State<BreathControlScreen>
+    with SingleTickerProviderStateMixin {
   late int inhaleDuration;
   late int holdDuration;
   late int exhaleDuration;
@@ -60,7 +60,8 @@ class _BreathControlScreenState extends State<BreathControlScreen> with SingleTi
   }
 
   void _playSelectedSound() async {
-    String soundFile = 'music/${widget.selectedSound.toLowerCase().replaceAll(' ', '_')}.mp4';
+    String soundFile =
+        'music/${widget.selectedSound.toLowerCase().replaceAll(' ', '_')}.mp4';
     await _audioPlayer.play(AssetSource(soundFile));
     _audioPlayer.setReleaseMode(ReleaseMode.loop); // Loop the sound
   }
@@ -98,12 +99,24 @@ class _BreathControlScreenState extends State<BreathControlScreen> with SingleTi
           double expandedSize = 250; // Reduced from 250 to 200
           double size = lastSize;
           if (currentPhase == 0) {
-            size = baseSize + (expandedSize - baseSize) * (1 - remainingTime / inhaleDuration);
+            size =
+                baseSize +
+                (expandedSize - baseSize) *
+                    (1 - remainingTime / inhaleDuration);
           } else if (currentPhase == 2) {
-            size = expandedSize - (expandedSize - baseSize) * (1 - remainingTime / exhaleDuration);
+            size =
+                expandedSize -
+                (expandedSize - baseSize) *
+                    (1 - remainingTime / exhaleDuration);
           }
           lastSize = size;
-          ripples.add(RippleCircle(color: getPhaseColor(), size: lastSize, isEnding: isEnding));
+          ripples.add(
+            RippleCircle(
+              color: getPhaseColor(),
+              size: lastSize,
+              isEnding: isEnding,
+            ),
+          );
         });
       }
     });
@@ -130,8 +143,9 @@ class _BreathControlScreenState extends State<BreathControlScreen> with SingleTi
     final seconds = (actualMeditationTime % 60).toString().padLeft(2, '0');
     final sessionTime = '${minutes}m${seconds}s';
     final timestamp = DateTime.now();
-    final formattedTime = '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}-${timestamp.day.toString().padLeft(2, '0')} '
-      '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
+    final formattedTime =
+        '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}-${timestamp.day.toString().padLeft(2, '0')} '
+        '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
 
     List<String> sessions = prefs.getStringList('lastSessions') ?? [];
     if (sessions.length >= 3) {
@@ -142,22 +156,24 @@ class _BreathControlScreenState extends State<BreathControlScreen> with SingleTi
   }
 
   Future<void> _updateProgress(int sessionDuration) async {
-      final prefs = await SharedPreferences.getInstance();
-      
-      // Load or Initialize Daily Data
-      Map<String, int> dailyData = {};
-      if (prefs.getString('dailyData') != null) {
-        dailyData = Map<String, int>.from(jsonDecode(prefs.getString('dailyData')!));
-      }
+    final prefs = await SharedPreferences.getInstance();
 
-      // Update Daily Data
-      String today = DateTime.now().toIso8601String().split('T')[0];
-      dailyData[today] = (dailyData[today] ?? 0) + sessionDuration;
-      await prefs.setString('dailyData', jsonEncode(dailyData));
+    // Load or Initialize Daily Data
+    Map<String, int> dailyData = {};
+    if (prefs.getString('dailyData') != null) {
+      dailyData = Map<String, int>.from(
+        jsonDecode(prefs.getString('dailyData')!),
+      );
+    }
 
-      print('Daily Data Updated: $dailyData');
+    // Update Daily Data
+    String today = DateTime.now().toIso8601String().split('T')[0];
+    dailyData[today] = (dailyData[today] ?? 0) + sessionDuration;
+    await prefs.setString('dailyData', jsonEncode(dailyData));
+
+    print('Daily Data Updated: $dailyData');
   }
-    
+
   void stopBreathingCycle() {
     timer?.cancel();
     sessionTimer?.cancel();
@@ -169,16 +185,25 @@ class _BreathControlScreenState extends State<BreathControlScreen> with SingleTi
     _saveSession();
     _updateProgress(actualMeditationTime);
 
-    if (actualMeditationTime >= widget.sessionDuration * 60 ) {
-        ScaffoldMessenger.of(context).showSnackBar(
-SnackBar(content: Text('Kudos! You Made It through entire Session! 🎉')),
-        );
-    } 
+    if (actualMeditationTime >= widget.sessionDuration * 60) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Kudos! You Made It through entire Session! 🎉'),
+        ),
+      );
+    }
 
     Future.delayed(Duration(seconds: 3), () {
-      Navigator.popUntil(context, (route) => route.isFirst); //Return to main screen
+      Navigator.popUntil(
+        context,
+        (route) => route.isFirst,
+      ); //Return to main screen
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('You meditated for ${actualMeditationTime ~/ 60} min ${actualMeditationTime % 60} sec')),
+        SnackBar(
+          content: Text(
+            'You meditated for ${actualMeditationTime ~/ 60} min ${actualMeditationTime % 60} sec',
+          ),
+        ),
       );
     });
   }
@@ -192,48 +217,87 @@ SnackBar(content: Text('Kudos! You Made It through entire Session! 🎉')),
   }
 
   Color getPhaseColor() {
-    return currentPhase == 0 ? Colors.red: currentPhase == 1 ? Colors.black : Colors.pink;
+    return currentPhase == 0
+        ? Colors.red
+        : currentPhase == 1
+        ? Colors.black
+        : Colors.pink;
   }
 
   @override
   Widget build(BuildContext context) {
-    String phaseText = showFinishedText ? 'Meditation Over' : currentPhase == 0 ? 'Inhale' : currentPhase == 1 ? 'Hold' : 'Exhale';
+    String phaseText =
+        showFinishedText
+            ? 'Meditation Over'
+            : currentPhase == 0
+            ? 'Inhale'
+            : currentPhase == 1
+            ? 'Hold'
+            : 'Exhale';
     Color phaseColor = getPhaseColor();
 
     double baseSize = 150;
     double expandedSize = 250;
     double size = lastSize;
     if (currentPhase == 0) {
-      size = baseSize + (expandedSize - baseSize) * (1 - remainingTime / inhaleDuration);
+      size =
+          baseSize +
+          (expandedSize - baseSize) * (1 - remainingTime / inhaleDuration);
     } else if (currentPhase == 2) {
-      size = expandedSize - (expandedSize - baseSize) * (1 - remainingTime / exhaleDuration);
+      size =
+          expandedSize -
+          (expandedSize - baseSize) * (1 - remainingTime / exhaleDuration);
     }
     lastSize = size;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text('Breath Control'),
         automaticallyImplyLeading: false,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Breath Control',
+          style: TextStyle(color: Colors.black.withOpacity(0.7)),
+        ),
+        centerTitle: true,
       ),
       body: Stack(
         alignment: Alignment.center,
         children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFFFFFDE7),
+                  Color(0xFFE0F7FA),
+                  Color(0xFFE8F5E9),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
           Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: LinearProgressIndicator(
-                    value: 1 - actualMeditationTime / (widget.sessionDuration * 60),
-                    backgroundColor: getPhaseColor().withOpacity(0.2),
-                    color: getPhaseColor(),
-                    minHeight: 2,
-                ),
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: LinearProgressIndicator(
+              value: 1 - actualMeditationTime / (widget.sessionDuration * 60),
+              backgroundColor: getPhaseColor().withOpacity(0.2),
+              color: getPhaseColor(),
+              minHeight: 2,
+            ),
           ),
           Align(
             alignment: Alignment(0, -0.6),
             child: Text(
               phaseText,
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: phaseColor),
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: phaseColor,
+              ),
             ),
           ),
           GestureDetector(
@@ -246,7 +310,10 @@ SnackBar(content: Text('Kudos! You Made It through entire Session! 🎉')),
                   width: size,
                   height: size,
                   decoration: BoxDecoration(
-                    color: isEnding ? Colors.transparent : phaseColor.withOpacity(0.3),
+                    color:
+                        isEnding
+                            ? Colors.transparent
+                            : phaseColor.withOpacity(0.3),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -260,8 +327,8 @@ SnackBar(content: Text('Kudos! You Made It through entire Session! 🎉')),
               ],
             ),
           ),
-         ],
-       ),
+        ],
+      ),
     );
   }
 }

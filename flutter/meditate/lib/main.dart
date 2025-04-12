@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meditate/app/meditation_settings.dart';
@@ -9,7 +10,18 @@ import 'package:meditate/app/permission_notify.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService().initialize();
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  await NotificationService().initialize((payload) {
+    print(payload);
+    if (navigatorKey.currentState != null) {
+      navigatorKey.currentState!.push(
+        MaterialPageRoute(
+          builder:
+              (_) => MeditationSettingsScreen(), // Update with actual screen
+        ),
+      );
+    }
+  });
   runApp(const MeditationApp());
 }
 
@@ -19,9 +31,7 @@ class MeditationApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(
-        fontFamily: 'FunelSans',
-      ),
+      theme: ThemeData(fontFamily: 'FunelSans'),
       debugShowCheckedModeBanner: false,
       home: HomeScreen(),
     );
@@ -36,10 +46,15 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   List<String> lastSessions = [];
 
+  late Timer _timer;
+  double _opacityTopLeft = 0.0;
+  double _opacityBottomRight = 0.0;
+
   @override
   void initState() {
     super.initState();
     _loadLastSessions();
+    _startSparkleAnimation();
   }
 
   Future<void> _loadLastSessions() async {
@@ -49,98 +64,168 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _startSparkleAnimation() {
+    _timer = Timer.periodic(Duration(seconds: 3), (timer) {
+      setState(() {
+        _opacityTopLeft = Random().nextBool() ? 1.0 : 0.0;
+        _opacityBottomRight = Random().nextBool() ? 1.0 : 0.0;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text('Good Life'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Welcome to GoodLife',
+          style: TextStyle(color: Colors.black.withOpacity(0.7)),
+        ),
+        centerTitle: true,
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                // Meditation Icon
-                Column(
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFFFFFFFF), // Very light pink/red
+                  Color(0xFFFFFDE7), // Pale yellow
+                  Color(0xFFE0F7FA), // Light cyan/blue
+                  Color(0xFFE8F5E9), // Light green
+                  Color(0xFFF8BBD0), // Soft pink
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                     AnimatedIconButton(
-                      icon:Icons.self_improvement,
+                    // Meditation Icon
+                    AnimatedIconButton(
+                      icon: Icons.self_improvement,
                       color: Colors.deepPurple.shade400,
                       size: 60,
                       label: 'Meditate',
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => MeditationSettingsScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => MeditationSettingsScreen(),
+                          ),
                         ).then((_) => _loadLastSessions());
                       },
-                     ),
-                  ],
-                ),
-                SizedBox(width: 20),
-                // Progress Icon
-                Column(
-                  children: [
-                     AnimatedIconButton(
-                      icon: Icons.bar_chart,
-                      color: Colors.lightGreen.shade200,
-                      size: 60,
-                      label: 'Progress',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => ProgressScreen()),
-                        );
-                      },
                     ),
-                  ],
-                ),
-                SizedBox(width: 20),
-                // Reminder Icon
-                Column(
-                  children: [
-                    AnimatedIconButton(
-                      icon: Icons.notifications_active,
-                      color: Colors.deepOrange.shade400,
-                      size: 60,
-                      label: 'Remind Me',
-                      onPressed: () {
-                        checkAndRequestPermission();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => ReminderScreen()),
-                        );
-                      },
-                    ),
-                  ],
+                    SizedBox(width: 20),
+                    /*
+                AnimatedIconButton(
+                  icon: Icons.account_circle,
+                  color: Colors.blueGrey,
+                  size: 60, // Use Material Icons
+                  label: 'Settings',
+                  onPressed:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MeditationSettingsScreen(),
+                        ),
+                      ),
                 ),
               ],
             ),
-            SizedBox(height: 20),
-            SizedBox(
-              width: 300,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                    Text(
-                      'Past 3 Sessions',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                */
+                    // Progress Icon
+                    Column(
+                      children: [
+                        AnimatedIconButton(
+                          icon: Icons.bar_chart,
+                          color: Colors.lightGreen.shade200,
+                          size: 60,
+                          label: 'Progress',
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ProgressScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                    ...lastSessions.map((session) => Text(
-                        session,
-                        textAlign: TextAlign.left,
-                        style: TextStyle(fontSize: 16),
-                    )).toList(),
-                ],
-              ),
+                    SizedBox(width: 20),
+                    // Reminder Icon
+                    Column(
+                      children: [
+                        AnimatedIconButton(
+                          icon: Icons.notifications_active,
+                          color: Colors.deepOrange.shade400,
+                          size: 60,
+                          label: 'Remind Me',
+                          onPressed: () {
+                            checkAndRequestPermission();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ReminderScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+                SizedBox(
+                  width: 300,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Past 3 Sessions',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      ...lastSessions
+                          .map(
+                            (session) => Text(
+                              session,
+                              textAlign: TextAlign.left,
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          )
+                          .toList(),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            ],
-        ),
+          ),
+        ],
       ),
-   );
+    );
   }
 }
 
@@ -191,4 +276,3 @@ class _AnimatedIconButtonState extends State<AnimatedIconButton> {
     );
   }
 }
-
