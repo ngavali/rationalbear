@@ -7,6 +7,7 @@ plugins {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    implementation("com.google.android.material:material:1.11.0")
 }
 
 android {
@@ -43,6 +44,10 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    // other configs...
+
+    sourceSets["main"].res.srcDirs("src/main/res")
 }
 
 flutter {

@@ -11,7 +11,10 @@ class MeditationSettingsScreen extends StatefulWidget {
 
 class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
   int sessionDuration = 5;
-  List<String> soundOptions = ['Calming Music', 'Morning', 'Night'];
+  List<String> soundOptions = [
+    //'Calming Music',
+    'Morning', 'Night',
+  ];
   String selectedSound = 'Morning';
 
   List<String> breathingTechniques = [
@@ -314,9 +317,11 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color(0xFFFFFDE7),
-                  Color(0xFFE0F7FA),
-                  Color(0xFFE8F5E9),
+                  Color(0xFFFFFFFF), // Very light pink/red
+                  Color(0xFFFFFDE7), // Pale yellow
+                  Color(0xFFE0F7FA), // Light cyan/blue
+                  Color(0xFFE8F5E9), // Light green
+                  Color(0xFFF8BBD0), // Soft pink
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -365,8 +370,8 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
                 SizedBox(height: 10),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.green.shade200,
+                    foregroundColor: Colors.black,
                   ),
                   onPressed: () {
                     _savePreferences();
@@ -390,8 +395,8 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
                 SizedBox(height: 10),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.indigo,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.indigo.shade200,
+                    foregroundColor: Colors.black,
                   ),
                   onPressed: () {
                     _savePreferences();

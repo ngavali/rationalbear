@@ -269,9 +269,11 @@ class _BreathControlScreenState extends State<BreathControlScreen>
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color(0xFFFFFDE7),
-                  Color(0xFFE0F7FA),
-                  Color(0xFFE8F5E9),
+                  Color(0xFFFFFFFF), // Very light pink/red
+                  Color(0xFFFFFDE7), // Pale yellow
+                  Color(0xFFE0F7FA), // Light cyan/blue
+                  Color(0xFFE8F5E9), // Light green
+                  Color(0xFFF8BBD0), // Soft pink
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,

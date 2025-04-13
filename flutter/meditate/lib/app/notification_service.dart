@@ -29,6 +29,7 @@ class NotificationService {
     String body,
     DateTime scheduledTime,
   ) async {
+    print("🧘 Reminder created at $id, $title, $body, $scheduledTime");
     await flutterLocalNotificationsPlugin.zonedSchedule(
       id,
       title,
@@ -41,10 +42,11 @@ class NotificationService {
           importance: Importance.max,
         ),
       ),
-      androidAllowWhileIdle: true,
       androidScheduleMode: AndroidScheduleMode.alarmClock,
+      /*
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
+          */
       payload: "It's time to meditate",
     );
   }

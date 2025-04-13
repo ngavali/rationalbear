@@ -12,7 +12,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   await NotificationService().initialize((payload) {
-    print(payload);
+    print("🧘 Recived notificatoin $payload, $navigatorKey");
     if (navigatorKey.currentState != null) {
       navigatorKey.currentState!.push(
         MaterialPageRoute(
@@ -119,8 +119,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     // Meditation Icon
                     AnimatedIconButton(
                       icon: Icons.self_improvement,
-                      color: Colors.deepPurple.shade400,
-                      size: 60,
+                      color: Colors.indigo,
+                      size: 50,
                       label: 'Meditate',
                       onPressed: () {
                         Navigator.push(
@@ -158,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         AnimatedIconButton(
                           icon: Icons.bar_chart,
                           color: Colors.lightGreen.shade200,
-                          size: 60,
+                          size: 50,
                           label: 'Progress',
                           onPressed: () {
                             Navigator.push(
@@ -177,8 +177,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         AnimatedIconButton(
                           icon: Icons.notifications_active,
-                          color: Colors.deepOrange.shade400,
-                          size: 60,
+                          color: Colors.pink.shade400,
+                          size: 50,
                           label: 'Remind Me',
                           onPressed: () {
                             checkAndRequestPermission();
