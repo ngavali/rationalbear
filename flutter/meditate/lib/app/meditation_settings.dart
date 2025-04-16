@@ -28,20 +28,29 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
   int customInhaleTime = 0;
   int customHoldTime = 0;
   int customExhaleTime = 0;
+  int customEndHoldTime = 0;
   bool calibrationComplete = false;
   bool showPhase = false;
 
   late FixedExtentScrollController _scrollController;
 
   Stopwatch stopwatch = Stopwatch();
-  String currentPhase = 'Start'; // Tracks which phase the user is measuring
+  String currentPhase = 'Calibrate'; // Tracks which phase the user is measuring
 
   late final Map<String, List<int>> techniqueDurations = {
     '4-7-8': [4, 7, 8],
     'Box Breathing': [4, 4, 4],
     'Pursed Lip Breathing': [3, 2, 4],
-    'Custom': <int>[customInhaleTime, customHoldTime, customExhaleTime],
+    'Custom': <int>[
+      customInhaleTime,
+      customHoldTime,
+      customExhaleTime,
+      customEndHoldTime,
+    ],
   };
+
+  bool enableAudioCue = true;
+  bool enableHapticFeedback = true;
 
   /*
      child: CupertinoPicker(
@@ -73,6 +82,9 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
     await prefs.setInt('customInhaleTime', customInhaleTime);
     await prefs.setInt('customHoldTime', customHoldTime);
     await prefs.setInt('customExhaleTime', customExhaleTime);
+    await prefs.setInt('customEndHoldTime', customEndHoldTime);
+    await prefs.setBool('enableAudioCue', enableAudioCue);
+    await prefs.setBool('enableHapticFeedback', enableHapticFeedback);
   }
 
   Future<void> _loadPreferences() async {
@@ -85,6 +97,11 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
       customInhaleTime = prefs.getInt('customInhaleTime') ?? 0;
       customHoldTime = prefs.getInt('customHoldTime') ?? 0;
       customExhaleTime = prefs.getInt('customExhaleTime') ?? 0;
+      customEndHoldTime = prefs.getInt('customEndHoldTime') ?? 0;
+
+      enableAudioCue = prefs.getBool('enableAudioCue') ?? true;
+      enableHapticFeedback = prefs.getBool('enableHapticFeedback') ?? true;
+
       _scrollController.jumpToItem(sessionDuration - 1);
       if (customInhaleTime != 0 ||
           customHoldTime != 0 ||
@@ -126,7 +143,7 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
 
     void handlePhase() {
       setState(() {
-        if (currentPhase == 'Start') {
+        if (currentPhase == 'Calibrate') {
           stopwatch.reset();
           stopwatch.start();
           currentPhase = 'Inhale';
@@ -143,6 +160,12 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
           currentPhase = 'Exhale';
         } else if (currentPhase == 'Exhale') {
           customExhaleTime = stopwatch.elapsed.inSeconds;
+          stopwatch.reset();
+          stopwatch.start();
+          currentPhase = 'End Hold';
+          _savePreferences();
+        } else if (currentPhase == 'End Hold') {
+          customEndHoldTime = stopwatch.elapsed.inSeconds;
           stopwatch.stop();
           calibrationComplete = true;
           showPhase = false;
@@ -168,6 +191,7 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
           Text('Inhale: $customInhaleTime sec'),
           Text('Hold: $customHoldTime sec'),
           Text('Exhale: $customExhaleTime sec'),
+          Text('End Hold: $customEndHoldTime sec'),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.deepOrangeAccent.shade200,
@@ -311,138 +335,151 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
         centerTitle: true,
       ),
 
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFFFFFFFF), // Very light pink/red
-                  Color(0xFFFFFDE7), // Pale yellow
-                  Color(0xFFE0F7FA), // Light cyan/blue
-                  Color(0xFFE8F5E9), // Light green
-                  Color(0xFFF8BBD0), // Soft pink
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFFFFFFFF), // Very light pink/red
+              Color(0xFFFFFDE7), // Pale yellow
+              Color(0xFFE0F7FA), // Light cyan/blue
+              Color(0xFFE8F5E9), // Light green
+              Color(0xFFF8BBD0), // Soft pink
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  'Select Breathing Technique',
-                  style: TextStyle(fontSize: 18),
-                ),
-                _buildBreathingTechniqueDropdown(),
-                _buildCustomBreathingTracker(),
-                SizedBox(height: 10),
-                Text('Select Sound', style: TextStyle(fontSize: 18)),
-                _buildSoundDropdown(),
-                SizedBox(height: 10),
-                Text('Duration', style: TextStyle(fontSize: 18)),
-                SizedBox(
-                  height: 60,
-                  child: CupertinoPicker(
-                    itemExtent: 35,
-                    scrollController:
-                        _scrollController, //FixedExtentScrollController(initialItem: sessionDuration - 1),
-                    onSelectedItemChanged: (index) {
-                      setState(() => sessionDuration = index + 1);
-                    },
-                    children: List.generate(
-                      15,
-                      (index) => Center(
-                        child: Text(
-                          '${index + 1} min',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.deepOrange,
+        ),
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 32,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Select Breathing Technique',
+                            style: TextStyle(fontSize: 18),
                           ),
-                        ),
+                          _buildBreathingTechniqueDropdown(),
+                          _buildCustomBreathingTracker(),
+                          SizedBox(height: 10),
+                          Text('Select Sound', style: TextStyle(fontSize: 18)),
+                          _buildSoundDropdown(),
+                          SizedBox(height: 10),
+                          Text('Duration', style: TextStyle(fontSize: 18)),
+                          SizedBox(
+                            height: 60,
+                            child: CupertinoPicker(
+                              itemExtent: 35,
+                              scrollController:
+                                  _scrollController, //FixedExtentScrollController(initialItem: sessionDuration - 1),
+                              onSelectedItemChanged: (index) {
+                                setState(() => sessionDuration = index + 1);
+                              },
+                              children: List.generate(
+                                15,
+                                (index) => Center(
+                                  child: Text(
+                                    '${index + 1} min',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.deepOrange,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          SwitchListTile(
+                            title: Text('Bells'),
+                            value: enableAudioCue,
+                            onChanged: (value) {
+                              setState(() {
+                                enableAudioCue = value;
+                              });
+                            },
+                          ),
+                          SwitchListTile(
+                            title: Text('Haptic Feedback'),
+                            value: enableHapticFeedback,
+                            onChanged: (value) {
+                              setState(() {
+                                enableHapticFeedback = value;
+                              });
+                            },
+                          ),
+                          SizedBox(height: 10),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green.shade200,
+                              foregroundColor: Colors.black,
+                            ),
+                            onPressed: () {
+                              _savePreferences();
+                              final durations =
+                                  techniqueDurations[selectedTechnique]!;
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => BreathControlScreen(
+                                        sessionDuration: sessionDuration,
+                                        selectedSound: selectedSound,
+                                        inhaleDuration: durations[0],
+                                        holdDuration: durations[1],
+                                        exhaleDuration: durations[2],
+                                        endHoldDuration:
+                                            durations.length > 3
+                                                ? durations[3]
+                                                : 0,
+                                        enableAudioCue: enableAudioCue,
+                                        enableHapticFeedback:
+                                            enableHapticFeedback,
+                                      ),
+                                ),
+                              );
+                            },
+                            child: Text(
+                              'Start Session',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.indigo.shade200,
+                              foregroundColor: Colors.black,
+                            ),
+                            onPressed: () {
+                              _savePreferences();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Settings Saved')),
+                              );
+                            },
+                            child: Text(
+                              'Save Settings',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-                SizedBox(height: 10),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.shade200,
-                    foregroundColor: Colors.black,
-                  ),
-                  onPressed: () {
-                    _savePreferences();
-                    final durations = techniqueDurations[selectedTechnique]!;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => BreathControlScreen(
-                              sessionDuration: sessionDuration,
-                              selectedSound: selectedSound,
-                              inhaleDuration: durations[0],
-                              holdDuration: durations[1],
-                              exhaleDuration: durations[2],
-                            ),
-                      ),
-                    );
-                  },
-                  child: Text('Start Session', style: TextStyle(fontSize: 16)),
-                ),
-                SizedBox(height: 10),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.indigo.shade200,
-                    foregroundColor: Colors.black,
-                  ),
-                  onPressed: () {
-                    _savePreferences();
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text('Settings Saved')));
-                  },
-                  child: Text('Save Settings', style: TextStyle(fontSize: 16)),
-                ),
-
-                /*
-         SizedBox(height: 24),
-         Text('Breathing Technique:', style: TextStyle(fontSize: 18)),
-         DropdownButton<String>(
-         value: selectedTechnique,
-         items: breathingTechniques.map((technique) {
-         return DropdownMenuItem<String>(
-         value: technique,
-         child: Text(technique),
-         );
-         }).toList(),
-         onChanged: (newValue) => setState(() => selectedTechnique = newValue!),
-         ),
-         Text('Sound:', style: TextStyle(fontSize: 18)),
-         DropdownButton<String>(
-         value: selectedSound,
-         items: soundOptions.map((sound) {
-         return DropdownMenuItem<String>(
-         value: sound,
-         child: Text(sound),
-         );
-         }).toList(),
-         onChanged: (newValue) => setState(() => selectedSound = newValue!),
-         ),
-         GestureDetector(
-         onTap: () => _showDurationPicker(context),
-         child: Text(
-         'Meditation Time: $sessionDuration mins',
-         style: TextStyle(fontSize: 18, color: Colors.blue),
-         ),
-         ),
-         */
-              ],
-            ),
+              );
+            },
           ),
-        ],
+        ),
       ),
     );
   }

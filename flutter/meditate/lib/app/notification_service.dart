@@ -48,6 +48,7 @@ class NotificationService {
           UILocalNotificationDateInterpretation.absoluteTime,
           */
       payload: "It's time to meditate",
+      matchDateTimeComponents: DateTimeComponents.time,
     );
   }
 

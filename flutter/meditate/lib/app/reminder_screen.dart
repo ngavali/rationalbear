@@ -32,7 +32,16 @@ class _ReminderScreenState extends State<ReminderScreen> {
 
     if (pickedTime != null) {
       final now = DateTime.now();
-      final scheduledTime = DateTime(now.year, now.month, now.day, pickedTime.hour, pickedTime.minute);
+      DateTime scheduledTime = DateTime(
+        now.year,
+        now.month,
+        now.day,
+        pickedTime.hour,
+        pickedTime.minute,
+      );
+      if (scheduledTime.isBefore(DateTime.now())) {
+        scheduledTime = scheduledTime.add(const Duration(days: 1));
+      }
       final reminder = Reminder(
         id: (DateTime.now().millisecondsSinceEpoch % 2147483647).toInt(),
         message: 'Time to meditate!!!',
@@ -63,7 +72,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
                 backgroundColor: Colors.blueGrey,
                 foregroundColor: Colors.white,
               ),
-              child: Text('Create a Reminder'),
+              child: Text('Remind Me'),
             ),
           ),
           Expanded(
@@ -71,8 +80,10 @@ class _ReminderScreenState extends State<ReminderScreen> {
               itemCount: _reminders.length,
               itemBuilder: (context, index) {
                 final reminder = _reminders[index];
+                final hR = reminder.time.hour.toString().padLeft(2, '0');
+                final mN = reminder.time.minute.toString().padLeft(2, '0');
                 return ListTile(
-                  title: Text('Reminder at ${reminder.time.hour}:${reminder.time.minute} - ${reminder.message}'),
+                  title: Text('Reminder at ${hR}:${mN} - ${reminder.message}'),
                   trailing: IconButton(
                     icon: Icon(Icons.delete, color: Colors.red),
                     onPressed: () => _deleteReminder(reminder.id),
@@ -81,7 +92,10 @@ class _ReminderScreenState extends State<ReminderScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.0),
                   ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
                 );
               },
             ),

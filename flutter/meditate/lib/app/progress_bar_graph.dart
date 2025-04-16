@@ -7,7 +7,8 @@ import 'package:fl_chart/fl_chart.dart';
 class ProgressGraph extends StatefulWidget {
   final double maxTimeInMinutes; // Max time for the Y-axis
 
-  const ProgressGraph({Key? key, this.maxTimeInMinutes = 15.0}) : super(key: key);
+  const ProgressGraph({Key? key, this.maxTimeInMinutes = 15.0})
+    : super(key: key);
 
   @override
   _ProgressGraphState createState() => _ProgressGraphState();
@@ -20,7 +21,9 @@ class _ProgressGraphState extends State<ProgressGraph> {
     Map<String, int> dailyData = {};
     if (prefs.getString('dailyData') != null) {
       try {
-        dailyData = Map<String, int>.from(jsonDecode(prefs.getString('dailyData')!));
+        dailyData = Map<String, int>.from(
+          jsonDecode(prefs.getString('dailyData')!),
+        );
       } catch (e) {
         print('Error decoding dailyData: $e');
       }
@@ -28,7 +31,10 @@ class _ProgressGraphState extends State<ProgressGraph> {
 
     List<BarChartGroupData> data = [];
     List<String> last7Days = List.generate(7, (index) {
-      return DateTime.now().subtract(Duration(days: 6 - index)).toIso8601String().split('T')[0];
+      return DateTime.now()
+          .subtract(Duration(days: 6 - index))
+          .toIso8601String()
+          .split('T')[0];
     });
 
     for (int i = 0; i < 7; i++) {
@@ -43,10 +49,7 @@ class _ProgressGraphState extends State<ProgressGraph> {
               width: 10,
               borderRadius: BorderRadius.circular(2),
               gradient: LinearGradient(
-                colors: [
-                  Colors.lime,
-                  Colors.limeAccent,
-                ],
+                colors: [Colors.lime, Colors.limeAccent],
               ),
               backDrawRodData: BackgroundBarChartRodData(
                 show: true,
@@ -90,17 +93,22 @@ class _ProgressGraphState extends State<ProgressGraph> {
                 sideTitles: SideTitles(
                   showTitles: true,
                   interval: widget.maxTimeInMinutes / 5,
-                  getTitlesWidget: (value, _) => Text(
-                    '${value.toInt()} min',
-                    style: TextStyle(color: Colors.black54, fontSize: 12),
-                  ),
+                  getTitlesWidget:
+                      (value, _) => Text(
+                        '${value.toInt()} min',
+                        style: TextStyle(color: Colors.black54, fontSize: 12),
+                      ),
                 ),
               ),
               rightTitles: AxisTitles(
-                sideTitles: SideTitles(showTitles: false), // Hide numbers on the right side
+                sideTitles: SideTitles(
+                  showTitles: false,
+                ), // Hide numbers on the right side
               ),
               topTitles: AxisTitles(
-                sideTitles: SideTitles(showTitles: false), // Hide numbers on the top side
+                sideTitles: SideTitles(
+                  showTitles: false,
+                ), // Hide numbers on the top side
               ),
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(

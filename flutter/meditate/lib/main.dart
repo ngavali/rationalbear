@@ -87,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          'Welcome to GoodLife',
+          'Welcome to GoodLife!',
           style: TextStyle(color: Colors.black.withOpacity(0.7)),
         ),
         centerTitle: true,
@@ -179,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           icon: Icons.notifications_active,
                           color: Colors.pink.shade400,
                           size: 50,
-                          label: 'Remind Me',
+                          label: 'Reminders',
                           onPressed: () {
                             checkAndRequestPermission();
                             Navigator.push(
