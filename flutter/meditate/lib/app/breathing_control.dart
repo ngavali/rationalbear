@@ -65,6 +65,8 @@ class _BreathControlScreenState extends State<BreathControlScreen>
   String countdownText = "3";
   double countdownScale = 1.0;
 
+  bool wasStoppedByUser = false;
+
   List<Color> currentGradient = [
     Color(0xFFFFFFFF),
     Color(0xFFFFFDE7),
@@ -190,21 +192,21 @@ class _BreathControlScreenState extends State<BreathControlScreen>
             countdownScale = 0.8;
           });
 
-          Future.delayed(const Duration(milliseconds: 200), () {
+          Future.delayed(const Duration(milliseconds: 100), () {
             if (!mounted) return;
             setState(() {
               countdownScale = 1.0;
             });
           });
 
-          Future.delayed(const Duration(milliseconds: 1000), () {
+          Future.delayed(const Duration(milliseconds: 500), () {
             if (!mounted) return;
             setState(() {
               countdownOpacity = 0.0;
               countdownScale = 1.5; // optional: a slight scale up while fading
             });
 
-            Future.delayed(const Duration(milliseconds: 300), () {
+            Future.delayed(const Duration(milliseconds: 500), () {
               if (!mounted) return;
               setState(() {
                 showPreCountdown = false;
@@ -374,20 +376,18 @@ class _BreathControlScreenState extends State<BreathControlScreen>
     _audioPlayer.stop();
     setState(() {
       isEnding = true;
-      showFinishedText = true;
+      if (wasStoppedByUser) showFinishedText = true;
     });
     _saveSession();
     _updateProgress(actualMeditationTime);
 
     if (actualMeditationTime >= widget.sessionDuration * 60) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Kudos! You Made It through entire Session! 🎉'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Kudos! You made it! 🎉')));
     }
 
-    Future.delayed(Duration(seconds: 3), () {
+    Future.delayed(Duration(seconds: 2), () {
       Navigator.popUntil(
         context,
         (route) => route.isFirst,
@@ -430,7 +430,7 @@ class _BreathControlScreenState extends State<BreathControlScreen>
   Widget build(BuildContext context) {
     String phaseText =
         showFinishedText
-            ? 'Meditation Over'
+            ? 'Sad to see you go'
             : currentPhase == 0
             ? 'Inhale'
             : currentPhase == 1
@@ -484,17 +484,6 @@ class _BreathControlScreenState extends State<BreathControlScreen>
               ),
             ),
           ),*/
-          AnimatedContainer(
-            duration: Duration(seconds: 2),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: currentGradient,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
-
           if (showFinishingOverlay)
             Container(
               color: Colors.black.withOpacity(0.6),
@@ -511,100 +500,130 @@ class _BreathControlScreenState extends State<BreathControlScreen>
                 ],
               ),
             ),
-          if (showPreCountdown)
-            AnimatedOpacity(
-              opacity: countdownOpacity,
-              duration: const Duration(milliseconds: 300),
-              child: AnimatedScale(
-                scale: countdownScale,
-                duration: const Duration(milliseconds: 300),
-                child: Text(
-                  countdownText,
-                  style: const TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+
+          // 🔹 Everything else dims here
+          AnimatedOpacity(
+            duration: Duration(seconds: 2),
+            opacity: showFinishingOverlay ? 0.0 : 1.0,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                AnimatedContainer(
+                  duration: Duration(seconds: 2),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: currentGradient,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                   ),
                 ),
-              ),
-            )
-          else ...[
-            // Outer boundary ring
-            Container(
-              width: expandedSize,
-              height: expandedSize,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
-                  width: 2,
-                ),
-              ),
-            ),
 
-            // Inner boundary ring
-            Container(
-              width: baseSize,
-              height: baseSize,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.15),
-                  width: 2,
-                ),
-              ),
-            ),
-
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: LinearProgressIndicator(
-                value: 1 - actualMeditationTime / (widget.sessionDuration * 60),
-                backgroundColor: getPhaseColor().withOpacity(0.2),
-                color: getPhaseColor(),
-                minHeight: 2,
-              ),
-            ),
-            Align(
-              alignment: Alignment(0, -0.6),
-              child: Text(
-                phaseText,
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: phaseColor,
-                ),
-              ),
-            ),
-            GestureDetector(
-              onTap: stopBreathingCycle,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  AnimatedContainer(
-                    duration: Duration(milliseconds: 500),
-                    width: size,
-                    height: size,
-                    decoration: BoxDecoration(
-                      color:
-                          isEnding
-                              ? Colors.transparent
-                              : phaseColor.withOpacity(0.3),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
+                if (showPreCountdown)
+                  AnimatedOpacity(
+                    opacity: countdownOpacity,
+                    duration: const Duration(milliseconds: 300),
+                    child: AnimatedScale(
+                      scale: countdownScale,
+                      duration: const Duration(milliseconds: 300),
                       child: Text(
-                        '$remainingTime',
-                        style: TextStyle(fontSize: 48, color: Colors.white),
+                        countdownText,
+                        style: const TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  )
+                else ...[
+                  // Outer boundary ring
+                  Container(
+                    width: expandedSize,
+                    height: expandedSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 2,
                       ),
                     ),
                   ),
-                  ...ripples,
+
+                  // Inner boundary ring
+                  Container(
+                    width: baseSize,
+                    height: baseSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.15),
+                        width: 2,
+                      ),
+                    ),
+                  ),
+
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: LinearProgressIndicator(
+                      value:
+                          1 -
+                          actualMeditationTime / (widget.sessionDuration * 60),
+                      backgroundColor: getPhaseColor().withOpacity(0.2),
+                      color: getPhaseColor(),
+                      minHeight: 2,
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment(0, -0.6),
+                    child: Text(
+                      phaseText,
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: phaseColor,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      wasStoppedByUser = true;
+                      stopBreathingCycle();
+                    },
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        AnimatedContainer(
+                          duration: Duration(milliseconds: 500),
+                          width: size,
+                          height: size,
+                          decoration: BoxDecoration(
+                            color:
+                                isEnding
+                                    ? Colors.transparent
+                                    : phaseColor.withOpacity(0.3),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              '$remainingTime',
+                              style: TextStyle(
+                                fontSize: 48,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                        ...ripples,
+                      ],
+                    ),
+                  ),
                 ],
-              ),
+              ],
             ),
-          ],
+          ),
         ],
       ),
     );
