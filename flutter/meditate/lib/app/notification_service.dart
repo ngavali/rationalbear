@@ -29,7 +29,7 @@ class NotificationService {
     String body,
     DateTime scheduledTime,
   ) async {
-    print("🧘 Reminder created at $id, $title, $body, $scheduledTime");
+    //print("🧘 Reminder created at $id, $title, $body, $scheduledTime");
     await flutterLocalNotificationsPlugin.zonedSchedule(
       id,
       title,

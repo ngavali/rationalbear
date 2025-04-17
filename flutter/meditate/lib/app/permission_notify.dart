@@ -4,12 +4,16 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 void checkAndRequestPermission() async {
   final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-      flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
 
-  final bool? granted = await androidImplementation?.requestNotificationsPermission();
+  final bool? granted =
+      await androidImplementation?.requestNotificationsPermission();
   if (granted != null && granted) {
-    print('Notification permission granted!');
+    //print('Notification permission granted!');
   } else {
-    print('Notification permission denied!');
+    //print('Notification permission denied!');
   }
-} 
+}

@@ -93,7 +93,7 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
       selectedTechnique = prefs.getString('selectedTechnique') ?? '4-7-8';
       selectedSound = prefs.getString('selectedSound') ?? 'Morning';
       sessionDuration = prefs.getInt('sessionDuration') ?? 5;
-      print('Loaded -> $sessionDuration');
+      //print('Loaded -> $sessionDuration');
       customInhaleTime = prefs.getInt('customInhaleTime') ?? 0;
       customHoldTime = prefs.getInt('customHoldTime') ?? 0;
       customExhaleTime = prefs.getInt('customExhaleTime') ?? 0;
@@ -199,7 +199,7 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
             ),
             onPressed:
                 () => setState(() {
-                  currentPhase = 'Start';
+                  currentPhase = 'Calibrate';
                   customInhaleTime = 0;
                   customHoldTime = 0;
                   customExhaleTime = 0;

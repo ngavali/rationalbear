@@ -40,6 +40,8 @@ class _BreathControlScreenState extends State<BreathControlScreen>
   late int exhaleDuration;
   late int endHoldDuration;
 
+  late List<int> phaseDurations;
+
   late bool enableAudioCue;
   late bool enableHapticFeedback;
 
@@ -54,6 +56,8 @@ class _BreathControlScreenState extends State<BreathControlScreen>
   int actualMeditationTime = 0;
   final AudioPlayer _audioPlayer = AudioPlayer();
   final AudioPlayer _cuePlayer = AudioPlayer();
+
+  bool hasSessionStarted = false;
 
   String cueFile = 'music/Bell.mp3';
 
@@ -115,6 +119,10 @@ class _BreathControlScreenState extends State<BreathControlScreen>
   bool shouldEndAfterCycle = false;
   bool showFinishingOverlay = false;
 
+  late AnimationController closingController;
+  //late Animation<double> closingSize;
+  //late Animation<double> closingOpacity;
+
   @override
   void initState() {
     super.initState();
@@ -123,9 +131,31 @@ class _BreathControlScreenState extends State<BreathControlScreen>
     exhaleDuration = widget.exhaleDuration;
     endHoldDuration = widget.endHoldDuration ?? 0;
 
+    phaseDurations = [
+      widget.inhaleDuration,
+      widget.holdDuration,
+      widget.exhaleDuration,
+      widget.endHoldDuration,
+    ];
+
     enableAudioCue = widget.enableAudioCue ?? true;
     enableHapticFeedback = widget.enableHapticFeedback ?? true;
 
+    closingController = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 2),
+    );
+
+    /*
+    //This shrinks the bubble 
+    closingSize = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: closingController, curve: Curves.easeInOut),
+    );
+
+    closingOpacity = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: closingController, curve: Curves.easeOut),
+    );
+    */
     startPreCountdown();
     startSessionTimer();
   }
@@ -141,7 +171,7 @@ class _BreathControlScreenState extends State<BreathControlScreen>
 
   void triggerAudioCue() async {
     await _cuePlayer.play(AssetSource(cueFile), volume: 0.8);
-    Future.delayed(Duration(milliseconds: 2500), () {
+    Future.delayed(Duration(milliseconds: 2000), () {
       _cuePlayer.stop();
     });
   }
@@ -192,7 +222,7 @@ class _BreathControlScreenState extends State<BreathControlScreen>
             countdownScale = 0.8;
           });
 
-          Future.delayed(const Duration(milliseconds: 100), () {
+          Future.delayed(const Duration(milliseconds: 200), () {
             if (!mounted) return;
             setState(() {
               countdownScale = 1.0;
@@ -204,15 +234,18 @@ class _BreathControlScreenState extends State<BreathControlScreen>
             setState(() {
               countdownOpacity = 0.0;
               countdownScale = 1.5; // optional: a slight scale up while fading
+              showPreCountdown = false;
             });
+            startBreathingCycle();
 
+            /*
             Future.delayed(const Duration(milliseconds: 500), () {
               if (!mounted) return;
               setState(() {
                 showPreCountdown = false;
               });
               startBreathingCycle();
-            });
+            });*/
           });
         });
       }
@@ -243,21 +276,40 @@ class _BreathControlScreenState extends State<BreathControlScreen>
       if (remainingTime > 0) {
         setState(() {
           remainingTime--;
+          actualMeditationTime++;
         });
       } else {
         switchPhase();
       }
     });
-    if (enableAudioCue) triggerAudioCue();
-    if (enableHapticFeedback) triggerHapticCue();
+    if (hasSessionStarted && enableAudioCue) triggerAudioCue();
+    if (hasSessionStarted && enableHapticFeedback) triggerHapticCue();
   }
 
   void startSessionTimer() {
+    hasSessionStarted = true;
+
     sessionTimer = Timer.periodic(Duration(seconds: 1), (timer) {
-      actualMeditationTime++;
+      /*    actualMeditationTime++;
       if (actualMeditationTime >= widget.sessionDuration * 60) {
         shouldEndAfterCycle = true;
         //stopBreathingCycle();
+      }
+*/
+      if (remainingTime <= 1) {
+        timer.cancel();
+        setState(() {
+          remainingTime = 0;
+          actualMeditationTime++;
+        });
+        Future.delayed(const Duration(milliseconds: 100), () {
+          switchPhase();
+        });
+      } else {
+        setState(() {
+          remainingTime--;
+          actualMeditationTime++;
+        });
       }
     });
   }
@@ -294,7 +346,108 @@ class _BreathControlScreenState extends State<BreathControlScreen>
     });
   }
 
+  int getPhaseDuration(int phase) {
+    switch (phase) {
+      case 0:
+        return inhaleDuration;
+      case 1:
+        return holdDuration;
+      case 2:
+        return exhaleDuration;
+      case 3:
+        return endHoldDuration;
+      default:
+        return 0;
+    }
+  }
+
   void switchPhase() {
+    // Advance phase
+    setState(() {
+      currentPhase = (currentPhase + 1) % 4;
+      remainingTime = phaseDurations[currentPhase];
+    });
+
+    if (remainingTime == 0) {
+      switchPhase();
+    } else {
+      // Check if session time has exceeded
+      if (!shouldEndAfterCycle &&
+          actualMeditationTime >= widget.sessionDuration * 60) {
+        shouldEndAfterCycle = true;
+      }
+
+      // If we're in the first phase (Inhale) and session should end, trigger final visuals
+      if (shouldEndAfterCycle && currentPhase == 0 && !showFinishingOverlay) {
+        setState(() {
+          showFinishingOverlay = true;
+        });
+        closingController.forward();
+        _audioPlayer.setVolume(0.2);
+        triggerOutroSound();
+      }
+
+      // Schedule session to stop after final cycle ends
+      if (shouldEndAfterCycle && currentPhase == 0) {
+        Future.delayed(
+          Duration(seconds: phaseDurations.reduce((a, b) => a + b)), //buffer),
+          () {
+            stopBreathingCycle();
+          },
+        );
+      }
+
+      if (enableAudioCue) triggerAudioCue();
+      if (enableHapticFeedback) triggerHapticCue();
+      updateGradientForPhase(currentPhase);
+    }
+  }
+
+  /*
+  void switchPhase() {
+    bool isFinalCycle = false;
+
+    if (!shouldEndAfterCycle &&
+        actualMeditationTime >= widget.sessionDuration * 60) {
+      shouldEndAfterCycle = true;
+      isFinalCycle = true;
+    }
+
+    setState(() {
+      currentPhase = (currentPhase + 1) % phaseDurations.length;
+      remainingTime = phaseDurations[currentPhase];
+    });
+
+    if (isFinalCycle && currentPhase == 0) {
+      setState(() {
+        showFinishingOverlay = true;
+      });
+      closingController.forward();
+      _audioPlayer.setVolume(0.2);
+      triggerOutroSound();
+    }
+
+    if (shouldEndAfterCycle && currentPhase == 0) {
+      Future.delayed(Duration(seconds: 2), () {
+        stopBreathingCycle();
+      });
+    } else {
+      if (enableAudioCue) triggerAudioCue();
+      if (enableHapticFeedback) triggerHapticCue();
+      updateGradientForPhase(currentPhase);
+    }
+  }
+*/
+  /*
+  void switchPhase() {
+    bool isFinalCycle = false;
+
+    if (!shouldEndAfterCycle &&
+        actualMeditationTime >= widget.sessionDuration * 60) {
+      shouldEndAfterCycle = true;
+      isFinalCycle = true;
+    }
+
     setState(() {
       if (currentPhase == 0) {
         currentPhase = 1;
@@ -312,22 +465,25 @@ class _BreathControlScreenState extends State<BreathControlScreen>
       updateGradientForPhase(currentPhase);
       if (enableAudioCue) triggerAudioCue();
       if (enableHapticFeedback) triggerHapticCue();
-      if (shouldEndAfterCycle && currentPhase == 0) {
-        // Gracefully end after full cycle
+
+      // Check before transitioning to inhale
+      if (isFinalCycle && currentPhase == 0) {
         setState(() {
           showFinishingOverlay = true;
         });
+        closingController.forward();
+        _audioPlayer.setVolume(0.2);
+        triggerOutroSound();
+      }
 
-        _audioPlayer.setVolume(0.2); // soften background music
-        triggerOutroSound(); // soft chime
-
-        Future.delayed(Duration(seconds: 3), () {
+      if (shouldEndAfterCycle && currentPhase == 0) {
+        Future.delayed(Duration(seconds: 2), () {
           stopBreathingCycle();
         });
       }
     });
   }
-
+*/
   void triggerOutroSound() async {
     final outroPlayer = AudioPlayer();
     await outroPlayer.play(AssetSource(cueFile), volume: 0.8);
@@ -367,7 +523,7 @@ class _BreathControlScreenState extends State<BreathControlScreen>
     dailyData[today] = (dailyData[today] ?? 0) + sessionDuration;
     await prefs.setString('dailyData', jsonEncode(dailyData));
 
-    print('Daily Data Updated: $dailyData');
+    //print('Daily Data Updated: $dailyData');
   }
 
   void stopBreathingCycle() {
@@ -387,7 +543,7 @@ class _BreathControlScreenState extends State<BreathControlScreen>
       ).showSnackBar(SnackBar(content: Text('Kudos! You made it! 🎉')));
     }
 
-    Future.delayed(Duration(seconds: 2), () {
+    Future.delayed(Duration(seconds: remainingTime), () {
       Navigator.popUntil(
         context,
         (route) => route.isFirst,
@@ -407,7 +563,9 @@ class _BreathControlScreenState extends State<BreathControlScreen>
     preCountdownTimer?.cancel();
     timer?.cancel();
     sessionTimer?.cancel();
+    _cuePlayer.dispose();
     _audioPlayer.dispose();
+    closingController.dispose();
     super.dispose();
   }
 
@@ -460,10 +618,7 @@ class _BreathControlScreenState extends State<BreathControlScreen>
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(
-          'Breath Control',
-          style: TextStyle(color: Colors.black.withOpacity(0.7)),
-        ),
+        title: Text('', style: TextStyle(color: Colors.black.withOpacity(0.7))),
         centerTitle: true,
       ),
       body: Stack(
@@ -486,30 +641,31 @@ class _BreathControlScreenState extends State<BreathControlScreen>
           ),*/
           if (showFinishingOverlay)
             Container(
-              color: Colors.black.withOpacity(0.6),
+              color: Colors.black.withOpacity(0.1),
               alignment: Alignment.center,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.bedtime, size: 48, color: Colors.white),
+                  //Icon(Icons.bedtime, size: 48, color: Colors.white),
                   SizedBox(height: 12),
                   Text(
                     'Finishing Session...',
-                    style: TextStyle(fontSize: 24, color: Colors.white70),
+                    style: TextStyle(fontSize: 24, color: Colors.black),
                   ),
                 ],
               ),
             ),
-
           // 🔹 Everything else dims here
           AnimatedOpacity(
-            duration: Duration(seconds: 2),
-            opacity: showFinishingOverlay ? 0.0 : 1.0,
+            duration: Duration(seconds: phaseDurations.reduce((a, b) => a + b)),
+            opacity: showFinishingOverlay || wasStoppedByUser ? 0.0 : 1.0,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 AnimatedContainer(
-                  duration: Duration(seconds: 2),
+                  duration: Duration(
+                    seconds: phaseDurations.reduce((a, b) => a + b),
+                  ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: currentGradient,
@@ -537,32 +693,6 @@ class _BreathControlScreenState extends State<BreathControlScreen>
                     ),
                   )
                 else ...[
-                  // Outer boundary ring
-                  Container(
-                    width: expandedSize,
-                    height: expandedSize,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 2,
-                      ),
-                    ),
-                  ),
-
-                  // Inner boundary ring
-                  Container(
-                    width: baseSize,
-                    height: baseSize,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.15),
-                        width: 2,
-                      ),
-                    ),
-                  ),
-
                   Positioned(
                     left: 0,
                     right: 0,
@@ -587,39 +717,110 @@ class _BreathControlScreenState extends State<BreathControlScreen>
                       ),
                     ),
                   ),
+                  // Outer boundary ring
+                  /*
+                  AnimatedBuilder(
+                    animation: closingController,
+                    builder: (context, child) {
+                      final double scale = expandedSize; //closingSize.value;
+                      final double alpha = 0.5; //closingOpacity.value;
+
+                      return Transform.scale(
+                        scale: scale,
+                        child: Opacity(
+                          opacity: alpha,
+                          child:*/
+                  Container(
+                    width: expandedSize, // or baseSize for inner ring
+                    height: expandedSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.5),
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                  /*
+                        ),
+                      );
+                    },
+                  ),
+                  AnimatedBuilder(
+                    animation: closingController,
+                    builder: (context, child) {
+                      final double scale = expandedSize; //closingSize.value;
+                      final double alpha = 0.5; //closingOpacity.value;
+
+                      return Transform.scale(
+                        scale: scale,
+                        child: Opacity(
+                          opacity: alpha,
+                          child: 
+                          */
+                  Container(
+                    width: baseSize,
+                    height: baseSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.5),
+                        width: 2,
+                      ),
+                    ),
+                  ),
                   GestureDetector(
                     onTap: () {
                       wasStoppedByUser = true;
-                      stopBreathingCycle();
+                      if (!shouldEndAfterCycle) stopBreathingCycle();
                     },
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        AnimatedContainer(
-                          duration: Duration(milliseconds: 500),
-                          width: size,
-                          height: size,
-                          decoration: BoxDecoration(
-                            color:
-                                isEnding
-                                    ? Colors.transparent
-                                    : phaseColor.withOpacity(0.3),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              '$remainingTime',
-                              style: TextStyle(
-                                fontSize: 48,
-                                color: Colors.white,
+                        AnimatedBuilder(
+                          animation: closingController,
+                          builder: (context, child) {
+                            final double scale = 1; //closingSize.value;
+                            final double alpha = 1; //closingOpacity.value;
+
+                            return Transform.scale(
+                              scale: scale,
+                              child: Opacity(
+                                opacity: alpha,
+                                child: Container(
+                                  width: size,
+                                  height: size,
+                                  decoration: BoxDecoration(
+                                    color: getPhaseColor().withOpacity(0.3),
+                                    /*isEnding
+                                            ? Colors.transparent
+                                            : getPhaseColor().withOpacity(0.3),*/
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '$remainingTime',
+                                      style: TextStyle(
+                                        fontSize: 48,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
+                            );
+                          },
                         ),
                         ...ripples,
                       ],
                     ),
                   ),
+                  /*
+                        ),
+                      );
+                    },
+                  ),
+                  */
                 ],
               ],
             ),

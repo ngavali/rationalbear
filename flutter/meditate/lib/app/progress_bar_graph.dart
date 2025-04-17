@@ -25,7 +25,7 @@ class _ProgressGraphState extends State<ProgressGraph> {
           jsonDecode(prefs.getString('dailyData')!),
         );
       } catch (e) {
-        print('Error decoding dailyData: $e');
+        //print('Error decoding dailyData: $e');
       }
     }
 

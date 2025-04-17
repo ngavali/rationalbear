@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meditate/app/meditation_settings.dart';
@@ -7,12 +8,13 @@ import 'package:meditate/app/progress_screen.dart';
 import 'package:meditate/app/reminder_screen.dart';
 import 'package:meditate/app/notification_service.dart';
 import 'package:meditate/app/permission_notify.dart';
+import 'package:meditate/app/about.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   await NotificationService().initialize((payload) {
-    print("🧘 Recived notificatoin $payload, $navigatorKey");
+    // print("🧘 Recived notificatoin $payload, $navigatorKey");
     if (navigatorKey.currentState != null) {
       navigatorKey.currentState!.push(
         MaterialPageRoute(
@@ -220,6 +222,48 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
+                SizedBox(height: 20),
+                Column(
+                  children: [
+                    AnimatedIconButton(
+                      icon: Icons.info,
+                      color: Colors.blue.shade200,
+                      size: 50,
+                      label: 'About',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AboutScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                /*
+                SizedBox(height: 20),
+                Text.rich(
+                  TextSpan(
+                    text: 'About',
+                    style: TextStyle(
+                      color: Colors.blue,
+                      decoration: TextDecoration.underline,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    recognizer:
+                        TapGestureRecognizer()
+                          ..onTap = () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const AboutScreen(),
+                              ),
+                            );
+                          },
+                  ),
+                ),
+                */
               ],
             ),
           ),
