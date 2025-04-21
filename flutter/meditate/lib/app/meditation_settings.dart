@@ -13,9 +13,34 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
   int sessionDuration = 5;
   List<String> soundOptions = [
     //'Calming Music',
-    'Morning', 'Night',
+    'Morning', 'Night', '',
   ];
-  String selectedSound = 'Morning';
+  final backgroundSounds = [
+    {'emoji': '🌞', 'label': 'Morning', 'sound': 'morning'},
+    {'emoji': '🌙', 'label': 'Night', 'sound': 'night'},
+    {'emoji': '💤', 'label': 'Delta (Sleep, Healing)', 'sound': 'delta_beat'},
+    {
+      'emoji': '🧘',
+      'label': 'Theta (Meditation, Creativity)',
+      'sound': 'theta_beat',
+    },
+    {
+      'emoji': '🌿',
+      'label': 'Alpha (Relaxation, Focus)',
+      'sound': 'alpha_beat',
+    },
+    {
+      'emoji': '🔥',
+      'label': 'Beta (Alertness, Activity)',
+      'sound': 'beta_beat',
+    },
+    {
+      'emoji': '⚡',
+      'label': 'Gamma (Cognition, Awareness)',
+      'sound': 'gamma_beat',
+    },
+  ];
+  String selectedSound = 'night';
 
   List<String> breathingTechniques = [
     '4-7-8',
@@ -91,7 +116,11 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       selectedTechnique = prefs.getString('selectedTechnique') ?? '4-7-8';
-      selectedSound = prefs.getString('selectedSound') ?? 'Morning';
+
+      final loadedSound = prefs.getString('selectedSound') ?? 'morning';
+      final validSounds = backgroundSounds.map((e) => e['sound']).toSet();
+      selectedSound =
+          validSounds.contains(loadedSound) ? loadedSound : 'morning';
       sessionDuration = prefs.getInt('sessionDuration') ?? 5;
       //print('Loaded -> $sessionDuration');
       customInhaleTime = prefs.getInt('customInhaleTime') ?? 0;
@@ -265,6 +294,7 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
     );
   }
 
+  /*
   Widget _buildSoundDropdown() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16),
@@ -314,6 +344,51 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
           onChanged: (newValue) {
             setState(() {
               selectedSound = newValue!; //_savePreferences();
+            });
+          },
+        ),
+      ),
+    );
+  }
+*/
+  Widget _buildSoundDropdown() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade50, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: selectedSound,
+          icon: Icon(Icons.arrow_drop_down, color: Colors.indigo),
+          dropdownColor: Colors.white,
+          style: TextStyle(color: Colors.black, fontSize: 16),
+          items:
+              backgroundSounds.map((item) {
+                return DropdownMenuItem<String>(
+                  value: item['sound'],
+                  child: Row(
+                    children: [
+                      Text(item['emoji']!, style: TextStyle(fontSize: 20)),
+                      SizedBox(width: 10),
+                      Text(item['label']!),
+                    ],
+                  ),
+                );
+              }).toList(),
+          onChanged: (newValue) {
+            setState(() {
+              selectedSound = newValue!;
+              _savePreferences();
             });
           },
         ),

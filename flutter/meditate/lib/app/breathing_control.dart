@@ -59,8 +59,7 @@ class _BreathControlScreenState extends State<BreathControlScreen>
 
   bool hasSessionStarted = false;
 
-  String cueFile = 'music/Bell.mp3';
-
+  String cueFile = 'music/output.mp3';
   int preSessionCountdown = 3;
   bool showPreCountdown = true;
   Timer? preCountdownTimer;
@@ -157,7 +156,6 @@ class _BreathControlScreenState extends State<BreathControlScreen>
     );
     */
     startPreCountdown();
-    startSessionTimer();
   }
 
   void triggerHapticCue() async {
@@ -170,8 +168,11 @@ class _BreathControlScreenState extends State<BreathControlScreen>
   }
 
   void triggerAudioCue() async {
-    await _cuePlayer.play(AssetSource(cueFile), volume: 0.8);
-    Future.delayed(Duration(milliseconds: 2000), () {
+    await _cuePlayer.play(
+      AssetSource(cueFile),
+      volume: (wasStoppedByUser || isEnding) ? 0.2 : 0.8,
+    );
+    Future.delayed(Duration(milliseconds: 1000), () {
       _cuePlayer.stop();
     });
   }
@@ -232,11 +233,12 @@ class _BreathControlScreenState extends State<BreathControlScreen>
           Future.delayed(const Duration(milliseconds: 500), () {
             if (!mounted) return;
             setState(() {
-              countdownOpacity = 0.0;
+              countdownOpacity = 1.0;
               countdownScale = 1.5; // optional: a slight scale up while fading
               showPreCountdown = false;
+              startSessionTimer();
+              startBreathingCycle();
             });
-            startBreathingCycle();
 
             /*
             Future.delayed(const Duration(milliseconds: 500), () {
@@ -252,16 +254,10 @@ class _BreathControlScreenState extends State<BreathControlScreen>
     });
   }
 
-  void _playCalmingSound() async {
-    await _audioPlayer.play(AssetSource('chirping-04.mp4'));
-    _audioPlayer.setReleaseMode(ReleaseMode.loop); // Loop the sound
-    _audioPlayer.setVolume(1.0);
-  }
-
   void _playSelectedSound() async {
     String soundFile =
         'music/${widget.selectedSound.toLowerCase().replaceAll(' ', '_')}.mp4';
-    await _audioPlayer.play(AssetSource(soundFile));
+    await _audioPlayer.play(AssetSource(soundFile), volume: 0.8);
     _audioPlayer.setReleaseMode(ReleaseMode.loop); // Loop the sound
   }
 
@@ -282,13 +278,11 @@ class _BreathControlScreenState extends State<BreathControlScreen>
         switchPhase();
       }
     });
-    if (hasSessionStarted && enableAudioCue) triggerAudioCue();
-    if (hasSessionStarted && enableHapticFeedback) triggerHapticCue();
   }
 
   void startSessionTimer() {
     hasSessionStarted = true;
-
+    /*
     sessionTimer = Timer.periodic(Duration(seconds: 1), (timer) {
       /*    actualMeditationTime++;
       if (actualMeditationTime >= widget.sessionDuration * 60) {
@@ -303,7 +297,7 @@ class _BreathControlScreenState extends State<BreathControlScreen>
           actualMeditationTime++;
         });
         Future.delayed(const Duration(milliseconds: 100), () {
-          switchPhase();
+          //switchPhase();
         });
       } else {
         setState(() {
@@ -312,6 +306,7 @@ class _BreathControlScreenState extends State<BreathControlScreen>
         });
       }
     });
+  */
   }
 
   void generateRipples() {
@@ -362,6 +357,9 @@ class _BreathControlScreenState extends State<BreathControlScreen>
   }
 
   void switchPhase() {
+    if (hasSessionStarted && enableAudioCue) triggerAudioCue();
+    if (hasSessionStarted && enableHapticFeedback) triggerHapticCue();
+    updateGradientForPhase(currentPhase);
     // Advance phase
     setState(() {
       currentPhase = (currentPhase + 1) % 4;
@@ -370,36 +368,35 @@ class _BreathControlScreenState extends State<BreathControlScreen>
 
     if (remainingTime == 0) {
       switchPhase();
-    } else {
-      // Check if session time has exceeded
-      if (!shouldEndAfterCycle &&
-          actualMeditationTime >= widget.sessionDuration * 60) {
-        shouldEndAfterCycle = true;
-      }
+    }
+    // Check if session time has exceeded
+    if (!shouldEndAfterCycle &&
+        actualMeditationTime >
+            widget.sessionDuration * 60 -
+                phaseDurations.reduce((a, b) => a + b)) {
+      shouldEndAfterCycle = true;
+    }
 
-      // If we're in the first phase (Inhale) and session should end, trigger final visuals
-      if (shouldEndAfterCycle && currentPhase == 0 && !showFinishingOverlay) {
-        setState(() {
-          showFinishingOverlay = true;
-        });
-        closingController.forward();
-        _audioPlayer.setVolume(0.2);
-        triggerOutroSound();
-      }
+    // If we're in the first phase (Inhale) and session should end, trigger final visuals
+    if (shouldEndAfterCycle /*&& currentPhase == 0 */ &&
+        !showFinishingOverlay) {
+      setState(() {
+        showFinishingOverlay = true;
+      });
+      closingController.forward();
+      _audioPlayer.setVolume(0.2);
+      _cuePlayer.setVolume(0.2);
+      //triggerOutroSound();
+    }
 
-      // Schedule session to stop after final cycle ends
-      if (shouldEndAfterCycle && currentPhase == 0) {
-        Future.delayed(
-          Duration(seconds: phaseDurations.reduce((a, b) => a + b)), //buffer),
-          () {
-            stopBreathingCycle();
-          },
-        );
-      }
-
-      if (enableAudioCue) triggerAudioCue();
-      if (enableHapticFeedback) triggerHapticCue();
-      updateGradientForPhase(currentPhase);
+    // Schedule session to stop after final cycle ends
+    if ((shouldEndAfterCycle && currentPhase == 0) || wasStoppedByUser) {
+      Future.delayed(
+        Duration(seconds: phaseDurations.reduce((a, b) => a + b)), //buffer),
+        () {
+          stopBreathingCycle();
+        },
+      );
     }
   }
 
@@ -529,11 +526,9 @@ class _BreathControlScreenState extends State<BreathControlScreen>
   void stopBreathingCycle() {
     timer?.cancel();
     sessionTimer?.cancel();
-    _audioPlayer.stop();
-    setState(() {
-      isEnding = true;
-      if (wasStoppedByUser) showFinishedText = true;
-    });
+    //setState(() {
+    isEnding = true;
+    //});
     _saveSession();
     _updateProgress(actualMeditationTime);
 
@@ -543,19 +538,19 @@ class _BreathControlScreenState extends State<BreathControlScreen>
       ).showSnackBar(SnackBar(content: Text('Kudos! You made it! 🎉')));
     }
 
-    Future.delayed(Duration(seconds: remainingTime), () {
-      Navigator.popUntil(
-        context,
-        (route) => route.isFirst,
-      ); //Return to main screen
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'You meditated for ${actualMeditationTime ~/ 60} min ${actualMeditationTime % 60} sec',
-          ),
+    //Future.delayed(Duration(seconds: remainingTime), () {
+    Navigator.popUntil(
+      context,
+      (route) => route.isFirst,
+    ); //Return to main screen
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'You meditated for ${actualMeditationTime ~/ 60} min ${actualMeditationTime % 60} sec',
         ),
-      );
-    });
+      ),
+    );
+    //});
   }
 
   @override
@@ -772,7 +767,11 @@ class _BreathControlScreenState extends State<BreathControlScreen>
                   GestureDetector(
                     onTap: () {
                       wasStoppedByUser = true;
-                      if (!shouldEndAfterCycle) stopBreathingCycle();
+                      showFinishedText = true;
+                      showFinishingOverlay = true;
+                      _audioPlayer.setVolume(0.2);
+                      _cuePlayer.setVolume(0.2);
+                      //if (!shouldEndAfterCycle) stopBreathingCycle();
                     },
                     child: Stack(
                       alignment: Alignment.center,
