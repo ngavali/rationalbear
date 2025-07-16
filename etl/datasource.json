@@ -1,0 +1,16 @@
+{ "db" : [
+	{	"name"	: "mysqlDb",
+		"user"	: "ngavali",
+		"pass"  : "mypass",
+		"host"	: "localhost",
+		"port"	: 3306,
+		"driver": "mysql"
+	},{
+		"name"	: "pgsqlDb",
+		"user"	: "ngavali",
+		"pass"  : "mypass",
+		"host"	: "localhost",
+		"port"	: 5432,
+		"driver": "postgres"
+	}]
+}

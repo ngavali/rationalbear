@@ -1,0 +1,13 @@
+{
+	"bg1" : {
+		"name" : "Mysql Farm",
+		"port" : 3306,
+		"destination" : [
+			"mysql-1",
+			"mysql-2",
+			"mysql-3"
+		],
+		"algo" : 0,
+		"check" : 5
+	}
+}

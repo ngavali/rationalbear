@@ -1,0 +1,49 @@
+use std::collections::HashMap;
+
+struct Solution {}
+
+impl Solution {
+    pub fn length_of_longest_substring(s: String) -> i32 {
+        let mut sub_string : usize = 0 ;
+        let mut sub_string_map : HashMap<u8, usize>= HashMap::new();
+        let (mut start, mut end ) : (usize, usize)= ( 0, 0);
+
+        while start < s.len() && end < s.len() {
+            end = start;
+            while end < s.len() {
+ //               println!("{} {}", start, end);
+                    if sub_string < end-start {
+                        sub_string = end-start;
+                    }
+                if sub_string_map.contains_key(&s.as_bytes()[end]) {
+                    let startdx = sub_string_map.get(&s.as_bytes()[end]).unwrap();
+                    start+=*startdx;
+                    let mut k = 0;
+                    while k < end {
+                        sub_string_map.remove(&s.as_bytes()[k]);
+                        k+=1;
+                    }
+                    break;
+                } else {
+                    sub_string_map.insert(s.as_bytes()[end], end);
+                }
+                end+=1;
+            }
+//                    println!("Found - {}", sub_string);
+            start+=1;
+        } 
+
+        sub_string as i32
+    }
+}
+
+
+fn main() {
+
+    println!("{}", Solution::length_of_longest_substring("abcabcbb".to_string()));
+    println!("{}", Solution::length_of_longest_substring("bbbbb".to_string()));
+    println!("{}", Solution::length_of_longest_substring("pwwkew".to_string()));
+    println!("{}", Solution::length_of_longest_substring("abcadefgh".to_string()));
+    println!("{}", Solution::length_of_longest_substring("aabaab!bb".to_string()));
+
+}

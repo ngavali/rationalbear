@@ -1,0 +1,199 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+void main() {
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeManager(BaseLightTheme()),
+      child: const MyApp(),
+    ),
+  );
+}
+
+// Strategy + Decorator Interfaces
+abstract class ThemeComponent {
+  ThemeData getTheme();
+}
+
+// Base Themes
+class BaseLightTheme implements ThemeComponent {
+  @override
+  ThemeData getTheme() => ThemeData.light().copyWith(
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.blue,
+      foregroundColor: Colors.white,
+    ),
+    inputDecorationTheme: const InputDecorationTheme(
+      border: OutlineInputBorder(),
+    ),
+  );
+}
+
+class BaseDarkTheme implements ThemeComponent {
+  @override
+  ThemeData getTheme() => ThemeData.dark().copyWith(
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.black,
+      foregroundColor: Colors.white,
+    ),
+    inputDecorationTheme: const InputDecorationTheme(
+      border: OutlineInputBorder(),
+    ),
+  );
+}
+
+// Abstract Decorator
+class ThemeDecorator implements ThemeComponent {
+  final ThemeComponent _wrapped;
+  ThemeDecorator(this._wrapped);
+
+  @override
+  ThemeData getTheme() => _wrapped.getTheme();
+}
+
+// Concrete Decorators
+class HighContrastDecorator extends ThemeDecorator {
+  HighContrastDecorator(ThemeComponent wrapped) : super(wrapped);
+
+  @override
+  ThemeData getTheme() {
+    final base = super.getTheme();
+    return base.copyWith(
+      textTheme: base.textTheme.apply(
+        bodyColor: Colors.white,
+        displayColor: Colors.white,
+      ),
+      scaffoldBackgroundColor: Colors.black,
+      colorScheme: base.colorScheme.copyWith(
+        onBackground: Colors.white,
+        onSurface: Colors.white,
+        primary: Colors.white,
+        background: Colors.black,
+      ),
+      inputDecorationTheme: base.inputDecorationTheme.copyWith(
+        labelStyle: const TextStyle(color: Colors.white),
+        enabledBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.white),
+        ),
+        focusedBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.white),
+        ),
+      ),
+      appBarTheme: base.appBarTheme.copyWith(
+        backgroundColor: Colors.brown,
+        foregroundColor: Colors.white,
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.black,
+          backgroundColor: Colors.white,
+        ),
+      ),
+    );
+  }
+}
+
+class CustomFontDecorator extends ThemeDecorator {
+  CustomFontDecorator(ThemeComponent wrapped) : super(wrapped);
+
+  @override
+  ThemeData getTheme() {
+    final base = super.getTheme();
+    return base.copyWith(
+      textTheme: GoogleFonts.robotoTextTheme(base.textTheme),
+      inputDecorationTheme: base.inputDecorationTheme,
+      appBarTheme: base.appBarTheme,
+    );
+  }
+}
+
+// Theme Manager
+class ThemeManager extends ChangeNotifier {
+  ThemeComponent _theme;
+
+  ThemeManager(this._theme);
+
+  ThemeData get themeData => _theme.getTheme();
+
+  void setTheme(ThemeComponent newTheme) {
+    _theme = newTheme;
+    notifyListeners();
+  }
+}
+
+// MyApp
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: themeManager.themeData,
+      home: const HomePage(),
+    );
+  }
+}
+
+// UI: HomePage with Registration Form and Theme Switchers
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text("Registration Form")),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const TextField(
+              decoration: InputDecoration(labelText: 'Full Name'),
+            ),
+            const SizedBox(height: 12),
+            const TextField(decoration: InputDecoration(labelText: 'Email')),
+            const SizedBox(height: 12),
+            const TextField(
+              obscureText: true,
+              decoration: InputDecoration(labelText: 'Password'),
+            ),
+            const SizedBox(height: 20),
+            Center(
+              child: ElevatedButton(
+                onPressed: () {},
+                child: const Text('Register'),
+              ),
+            ),
+            const Divider(height: 40),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    themeManager.setTheme(
+                      CustomFontDecorator(BaseLightTheme()),
+                    );
+                  },
+                  child: const Text('Light + Font'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    themeManager.setTheme(
+                      HighContrastDecorator(BaseDarkTheme()),
+                    );
+                  },
+                  child: const Text('Dark + Contrast'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

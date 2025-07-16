@@ -1,0 +1,99 @@
+@startuml
+namespace quikflow {
+    class ConfigStruct << (S,Aquamarine) >> {
+        + Name string
+        + Dbname string
+        + Opts string
+        + Table string
+
+    }
+    class DataSource << (S,Aquamarine) >> {
+        + Name string
+        + User string
+        + Pass string
+        + Host string
+        + Port int
+        + Driver string
+
+    }
+    class ETLConfig << (S,Aquamarine) >> {
+        + Source ConfigStruct
+        + Destination ConfigStruct
+
+    }
+    class Query << (S,Aquamarine) >> {
+        + SQL string
+        + Args []<font color=blue>interface</font>{}
+
+    }
+    class ResultSet << (S,Aquamarine) >> {
+        - columns []string
+        - rows <font color=blue>chan</font> row
+
+    }
+    class RowIterator << (S,Aquamarine) >> {
+        - result *sql.Rows
+
+        + Stream(bufferSize int) (ResultSet, error)
+
+    }
+    interface SourceReader  {
+        + Read() ResultSet
+
+    }
+    interface SourceWriter  {
+        + Write( ResultSet) 
+
+    }
+    class Table << (S,Aquamarine) >> {
+        - name string
+
+        + Name() string
+
+    }
+    class csvHandler << (S,Aquamarine) >> {
+        - filename string
+        - separator rune
+        - hasHeader bool
+        - header []string
+
+        + Read() ResultSet
+
+    }
+    class database << (S,Aquamarine) >> {
+        - user string
+        - pass string
+        - host string
+        - port int
+        - dbname string
+        - opts string
+        - driver string
+        - isBatch bool
+
+        - canBatch() bool
+
+        + Query(q Query) *RowIterator
+        + Driver() string
+        + Connect(dsn string) 
+        + ExecuteStmt(stmt *sql.Stmt, args ...<font color=blue>interface</font>{}) 
+
+    }
+    class dbHandler << (S,Aquamarine) >> {
+        - config ConfigStruct
+
+        + Write(rs ResultSet) 
+        + Read() ResultSet
+
+    }
+    class quikflow.row << (T, #FF7700) >>  {
+    }
+}
+"sql.DB" *-- "quikflow.database"
+"quikflow.database" *-- "quikflow.dbHandler"
+
+"quikflow.SourceReader" <|-- "quikflow.csvHandler"
+"quikflow.SourceReader" <|-- "quikflow.dbHandler"
+"quikflow.SourceWriter" <|-- "quikflow.dbHandler"
+
+"quikflow.[]<font color=blue>interface</font>{}" #.. "quikflow.row"
+@enduml
