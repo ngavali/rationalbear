@@ -28,6 +28,7 @@ Plug 'gcmt/wildfire.vim'
 Plug 'scrooloose/nerdcommenter'
 Plug 'derekwyatt/vim-protodef', { 'for': ['c', 'cpp', 'objc'] }
 Plug 'suan/vim-instant-markdown', { 'for': 'markdown' }
+Plug 'darrikonn/vim-gofmt', { 'do': ':GoUpdateBinaries' }
 
 " Navigation
 Plug 'majutsushi/tagbar', { 'on': 'TagbarToggle' }
@@ -509,7 +510,7 @@ set nofoldenable
 nnoremap <c-d> :DBUIToggle<CR>
 
 "save from scrolling too much
-set scrolloff=9999
+"set scrolloff=9999
 
 "FuzzyFinder
 "Skip ccls cache and .git
@@ -527,7 +528,7 @@ let g:dart_format_on_save = v:true
 " GoTo code navigation
 " Mix coc with YouCompleteMe
 function! GoToDefn()
-  if &filetype ==# 'dart'
+  if &filetype ==# 'dart' || &filetype ==# 'rust'
     :call CocActionAsync('jumpDefinition')
   else
     YcmCompleter GoToDefinition
