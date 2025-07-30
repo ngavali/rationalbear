@@ -1,0 +1,31 @@
+strict digraph DiskGraph {
+edge [colorscheme="paired12"]
+nodesep=0.35;
+subgraph cluster_graph {
+color="white";
+-8239049817376823553 [label="/\\ pc = \"Lbl_1\"\n/\\ flags = [f1 |-> FALSE, f2 |-> FALSE]",style = filled]
+8834033084293412378 [label="/\\ pc = \"Lbl_1\"\n/\\ flags = [f1 |-> FALSE, f2 |-> TRUE]",style = filled]
+-6198473586789933692 [label="/\\ pc = \"Lbl_1\"\n/\\ flags = [f1 |-> TRUE, f2 |-> FALSE]",style = filled]
+6830641787206634849 [label="/\\ pc = \"Lbl_1\"\n/\\ flags = [f1 |-> TRUE, f2 |-> TRUE]",style = filled]
+8834033084293412378 -> 2168568697514123848 [label="",color="2",fontcolor="2"];
+-6198473586789933692 -> -1645638901466467667 [label="",color="2",fontcolor="2"];
+-1645638901466467667 [label="/\\ pc = \"Done\"\n/\\ flags = [f1 |-> TRUE, f2 |-> FALSE]"];
+-8239049817376823553 -> -1645638901466467667 [label="",color="2",fontcolor="2"];
+6830641787206634849 -> 2168568697514123848 [label="",color="2",fontcolor="2"];
+2168568697514123848 [label="/\\ pc = \"Done\"\n/\\ flags = [f1 |-> TRUE, f2 |-> TRUE]"];
+-1645638901466467667 -> -1645638901466467667 [label="",color="3",fontcolor="3"];
+-6198473586789933692 -> 2168568697514123848 [label="",color="2",fontcolor="2"];
+-8239049817376823553 -> 4200687985020311859 [label="",color="2",fontcolor="2"];
+8834033084293412378 -> 4200687985020311859 [label="",color="2",fontcolor="2"];
+4200687985020311859 [label="/\\ pc = \"Done\"\n/\\ flags = [f1 |-> FALSE, f2 |-> TRUE]"];
+2168568697514123848 -> 2168568697514123848 [label="",color="3",fontcolor="3"];
+4200687985020311859 -> 4200687985020311859 [label="",color="3",fontcolor="3"];
+6830641787206634849 -> 2168568697514123848 [label="",color="2",fontcolor="2"];
+{rank = same; -8239049817376823553;8834033084293412378;-6198473586789933692;6830641787206634849;}
+{rank = same; -1645638901466467667;2168568697514123848;4200687985020311859;}
+}
+subgraph cluster_legend {graph[style=bold];label = "Next State Actions" style="solid"
+node [ labeljust="l",colorscheme="paired12",style=filled,shape=record ]
+Terminating [label="Terminating",fillcolor=3]
+Lbl_1 [label="Lbl_1",fillcolor=2]
+}}
