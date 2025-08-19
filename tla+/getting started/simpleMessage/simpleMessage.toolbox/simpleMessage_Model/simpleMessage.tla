@@ -13,15 +13,16 @@ begin
     while Len(receive) /= 3 do
     \* Send
         if can_send /\ to_send /= <<>> then
-            \*in_transit := in_transit \cup {Head(to_send)};
+            in_transit := in_transit \cup {Head(to_send)};
             can_send := FALSE;
-            \*to_send := Tail(to_send);
+            to_send := Tail(to_send);
         end if;
     \* Receive
         either
             with msg \in in_transit do
                 receive := Append(receive, msg);
                 in_transit := in_transit \ {msg};
+                \* Response to receive can be lost!!!
                 either
                     can_send := TRUE;
                 or
@@ -34,7 +35,7 @@ begin
     end while;
     \* assert receive = <<1, 2, 3>>;
 end algorithm; *)
-\* BEGIN TRANSLATION (chksum(pcal) = "a8e41445" /\ chksum(tla) = "7d1c2f85")
+\* BEGIN TRANSLATION (chksum(pcal) = "5076fa2d" /\ chksum(tla) = "a58d8d51")
 VARIABLES to_send, receive, in_transit, can_send, pc
 
 vars == << to_send, receive, in_transit, can_send, pc >>
@@ -49,15 +50,17 @@ Init == (* Global variables *)
 Lbl_1 == /\ pc = "Lbl_1"
          /\ IF Len(receive) /= 3
                THEN /\ IF can_send /\ to_send /= <<>>
-                          THEN /\ can_send' = FALSE
+                          THEN /\ in_transit' = (in_transit \cup {Head(to_send)})
+                               /\ can_send' = FALSE
+                               /\ to_send' = Tail(to_send)
                           ELSE /\ TRUE
-                               /\ UNCHANGED can_send
+                               /\ UNCHANGED << to_send, in_transit, can_send >>
                     /\ \/ /\ pc' = "Lbl_2"
                        \/ /\ TRUE
                           /\ pc' = "Lbl_1"
                ELSE /\ pc' = "Done"
-                    /\ UNCHANGED can_send
-         /\ UNCHANGED << to_send, receive, in_transit >>
+                    /\ UNCHANGED << to_send, in_transit, can_send >>
+         /\ UNCHANGED receive
 
 Lbl_2 == /\ pc = "Lbl_2"
          /\ \E msg \in in_transit:
@@ -82,5 +85,5 @@ Termination == <>(pc = "Done")
 \* END TRANSLATION 
 =============================================================================
 \* Modification History
-\* Last modified Mon Jul 28 00:21:27 IST 2025 by ngavali
+\* Last modified Mon Jul 28 00:27:47 IST 2025 by ngavali
 \* Created Mon Jul 28 00:04:48 IST 2025 by ngavali

@@ -2,18 +2,18 @@
 TLC2 Version 2.19 of 08 August 2024 (rev: 5a47802)
 @!@!@ENDMSG 2262 @!@!@
 @!@!@STARTMSG 2187:0 @!@!@
-Running breadth-first search Model-Checking with fp 61 and seed -5103355573156455964 with 5 workers on 10 cores with 1214MB heap and 2730MB offheap memory [pid: 63600] (Mac OS X 10.16 x86_64, AdoptOpenJDK 14.0.1 x86_64, OffHeapDiskFPSet, DiskStateQueue).
+Running breadth-first search Model-Checking with fp 26 and seed 3097326297181527707 with 2 workers on 4 cores with 1175MB heap and 2642MB offheap memory [pid: 36254] (Linux 6.14.0-27-generic amd64, AdoptOpenJDK 14.0.1 x86_64, OffHeapDiskFPSet, DiskStateQueue).
 @!@!@ENDMSG 2187 @!@!@
 @!@!@STARTMSG 2220:0 @!@!@
 Starting SANY...
 @!@!@ENDMSG 2220 @!@!@
-Parsing file /Users/ngavali/myprojects/personal/tlaplus/simpleMessage/simpleMessage.toolbox/simpleMessage_Model/MC.tla
-Parsing file /Users/ngavali/myprojects/personal/tlaplus/simpleMessage/simpleMessage.toolbox/simpleMessage_Model/simpleMessage.tla
+Parsing file /home/ngavali/myprojects/github.com/rationalbear/tla+/getting started/simpleMessage/simpleMessage.toolbox/simpleMessage_Model/MC.tla
+Parsing file /home/ngavali/myprojects/github.com/rationalbear/tla+/getting started/simpleMessage/simpleMessage.toolbox/simpleMessage_Model/simpleMessage.tla
 Labels added.
-Parsing file /private/var/folders/s5/cmsy30zj51z_1yrv5ngkl4fr0000gn/T/AppTranslocation/FBE10706-BB7F-401D-91E9-F366B3188849/d/TLA+ Toolbox.app/Contents/Eclipse/plugins/org.lamport.tlatools_1.0.0.202408081326/tla2sany/StandardModules/TLC.tla
-Parsing file /private/var/folders/s5/cmsy30zj51z_1yrv5ngkl4fr0000gn/T/AppTranslocation/FBE10706-BB7F-401D-91E9-F366B3188849/d/TLA+ Toolbox.app/Contents/Eclipse/plugins/org.lamport.tlatools_1.0.0.202408081326/tla2sany/StandardModules/Sequences.tla
-Parsing file /private/var/folders/s5/cmsy30zj51z_1yrv5ngkl4fr0000gn/T/AppTranslocation/FBE10706-BB7F-401D-91E9-F366B3188849/d/TLA+ Toolbox.app/Contents/Eclipse/plugins/org.lamport.tlatools_1.0.0.202408081326/tla2sany/StandardModules/Naturals.tla
-Parsing file /private/var/folders/s5/cmsy30zj51z_1yrv5ngkl4fr0000gn/T/AppTranslocation/FBE10706-BB7F-401D-91E9-F366B3188849/d/TLA+ Toolbox.app/Contents/Eclipse/plugins/org.lamport.tlatools_1.0.0.202408081326/tla2sany/StandardModules/FiniteSets.tla
+Parsing file /home/ngavali/myprojects/TLAToolbox-1.7.4-linux.gtk.x86_64/toolbox/plugins/org.lamport.tlatools_1.0.0.202408081326/tla2sany/StandardModules/TLC.tla
+Parsing file /home/ngavali/myprojects/TLAToolbox-1.7.4-linux.gtk.x86_64/toolbox/plugins/org.lamport.tlatools_1.0.0.202408081326/tla2sany/StandardModules/Sequences.tla
+Parsing file /home/ngavali/myprojects/TLAToolbox-1.7.4-linux.gtk.x86_64/toolbox/plugins/org.lamport.tlatools_1.0.0.202408081326/tla2sany/StandardModules/Naturals.tla
+Parsing file /home/ngavali/myprojects/TLAToolbox-1.7.4-linux.gtk.x86_64/toolbox/plugins/org.lamport.tlatools_1.0.0.202408081326/tla2sany/StandardModules/FiniteSets.tla
 Semantic processing of module Naturals
 Semantic processing of module Sequences
 Semantic processing of module FiniteSets
@@ -24,13 +24,13 @@ Semantic processing of module MC
 SANY finished.
 @!@!@ENDMSG 2219 @!@!@
 @!@!@STARTMSG 2185:0 @!@!@
-Starting... (2025-07-28 00:21:33)
+Starting... (2025-08-03 12:23:59)
 @!@!@ENDMSG 2185 @!@!@
 @!@!@STARTMSG 2189:0 @!@!@
 Computing initial states...
 @!@!@ENDMSG 2189 @!@!@
 @!@!@STARTMSG 2190:0 @!@!@
-Finished computing initial states: 1 distinct state generated at 2025-07-28 00:21:34.
+Finished computing initial states: 1 distinct state generated at 2025-08-03 12:24:00.
 @!@!@ENDMSG 2190 @!@!@
 @!@!@STARTMSG 2114:1 @!@!@
 Deadlock reached.
@@ -48,116 +48,140 @@ The behavior up to this point is:
 
 @!@!@ENDMSG 2217 @!@!@
 @!@!@STARTMSG 2217:4 @!@!@
-2: <Lbl_1 line 49, col 10 to line 60, col 56 of module simpleMessage>
-/\ in_transit = {}
+2: <Lbl_1 line 50, col 10 to line 63, col 29 of module simpleMessage>
+/\ in_transit = {1}
 /\ can_send = FALSE
 /\ receive = <<>>
 /\ pc = "Lbl_2"
-/\ to_send = <<1, 2, 3>>
+/\ to_send = <<2, 3>>
+
+@!@!@ENDMSG 2217 @!@!@
+@!@!@STARTMSG 2217:4 @!@!@
+3: <Lbl_2 line 65, col 10 to line 73, col 29 of module simpleMessage>
+/\ in_transit = {}
+/\ can_send = FALSE
+/\ receive = <<1>>
+/\ pc = "Lbl_1"
+/\ to_send = <<2, 3>>
+
+@!@!@ENDMSG 2217 @!@!@
+@!@!@STARTMSG 2217:4 @!@!@
+4: <Lbl_1 line 50, col 10 to line 63, col 29 of module simpleMessage>
+/\ in_transit = {}
+/\ can_send = FALSE
+/\ receive = <<1>>
+/\ pc = "Lbl_2"
+/\ to_send = <<2, 3>>
 
 @!@!@ENDMSG 2217 @!@!@
 @!@!@STARTMSG 2201:0 @!@!@
-The coverage statistics at 2025-07-28 00:21:34
+The coverage statistics at 2025-08-03 12:24:00
 @!@!@ENDMSG 2201 @!@!@
 @!@!@STARTMSG 2773:0 @!@!@
-<Init line 42, col 1 to line 42, col 4 of module simpleMessage>: 2:2
+<Init line 43, col 1 to line 43, col 4 of module simpleMessage>: 2:2
 @!@!@ENDMSG 2773 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 43, col 9 to line 47, col 23 of module simpleMessage: 2
+  line 44, col 9 to line 48, col 23 of module simpleMessage: 2
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2772:0 @!@!@
-<Lbl_1 line 49, col 1 to line 49, col 5 of module simpleMessage>: 2:6
+<Lbl_1 line 50, col 1 to line 50, col 5 of module simpleMessage>: 8:18
 @!@!@ENDMSG 2772 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 49, col 13 to line 49, col 24 of module simpleMessage: 7
+  line 50, col 13 to line 50, col 24 of module simpleMessage: 23
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  |line 49, col 13 to line 49, col 14 of module simpleMessage: 4
+  |line 50, col 13 to line 50, col 14 of module simpleMessage: 14
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 50, col 16 to line 50, col 32 of module simpleMessage: 3
+  line 51, col 16 to line 51, col 32 of module simpleMessage: 9
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 51, col 27 to line 51, col 53 of module simpleMessage: 3
+  line 52, col 27 to line 52, col 53 of module simpleMessage: 9
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  |line 51, col 27 to line 51, col 34 of module simpleMessage: 3
+  |line 52, col 27 to line 52, col 34 of module simpleMessage: 9
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  |line 51, col 39 to line 51, col 53 of module simpleMessage: 2
+  |line 52, col 39 to line 52, col 53 of module simpleMessage: 4
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 52, col 32 to line 52, col 51 of module simpleMessage: 2
+  line 53, col 32 to line 55, col 58 of module simpleMessage: 4
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 53, col 35 to line 53, col 38 of module simpleMessage: 1
+  line 56, col 35 to line 56, col 38 of module simpleMessage: 5
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 54, col 35 to line 54, col 52 of module simpleMessage: 1
+  line 57, col 35 to line 57, col 79 of module simpleMessage: 5
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 55, col 24 to line 57, col 42 of module simpleMessage: 3
+  line 58, col 24 to line 60, col 42 of module simpleMessage: 9
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 58, col 24 to line 58, col 35 of module simpleMessage: 0
+  line 61, col 24 to line 61, col 35 of module simpleMessage: 0
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 59, col 24 to line 59, col 41 of module simpleMessage: 0
+  line 62, col 24 to line 62, col 68 of module simpleMessage: 0
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 60, col 13 to line 60, col 56 of module simpleMessage: 6
+  line 63, col 13 to line 63, col 29 of module simpleMessage: 18
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2772:0 @!@!@
-<Lbl_2 line 62, col 1 to line 62, col 5 of module simpleMessage>: 0:0
+<Lbl_2 line 65, col 1 to line 65, col 5 of module simpleMessage>: 4:6
 @!@!@ENDMSG 2772 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 62, col 13 to line 62, col 24 of module simpleMessage: 3
+  line 65, col 13 to line 65, col 24 of module simpleMessage: 15
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 64, col 18 to line 64, col 48 of module simpleMessage: 0
+  |line 65, col 13 to line 65, col 14 of module simpleMessage: 12
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 65, col 18 to line 65, col 49 of module simpleMessage: 0
+  line 67, col 18 to line 67, col 48 of module simpleMessage: 3
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 66, col 24 to line 66, col 39 of module simpleMessage: 0
+  line 68, col 18 to line 68, col 49 of module simpleMessage: 3
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 68, col 24 to line 68, col 41 of module simpleMessage: 0
+  line 69, col 21 to line 69, col 39 of module simpleMessage: 3
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 63, col 24 to line 63, col 33 of module simpleMessage: 1
+  line 70, col 24 to line 70, col 27 of module simpleMessage: 3
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 69, col 13 to line 69, col 25 of module simpleMessage: 0
+  line 71, col 24 to line 71, col 41 of module simpleMessage: 3
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 70, col 13 to line 70, col 29 of module simpleMessage: 0
+  line 66, col 24 to line 66, col 33 of module simpleMessage: 5
+@!@!@ENDMSG 2221 @!@!@
+@!@!@STARTMSG 2221:0 @!@!@
+  line 72, col 13 to line 72, col 25 of module simpleMessage: 6
+@!@!@ENDMSG 2221 @!@!@
+@!@!@STARTMSG 2221:0 @!@!@
+  line 73, col 13 to line 73, col 29 of module simpleMessage: 6
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2772:0 @!@!@
-<Terminating line 73, col 1 to line 73, col 11 of module simpleMessage>: 0:0
+<Terminating line 76, col 1 to line 76, col 11 of module simpleMessage>: 0:0
 @!@!@ENDMSG 2772 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 73, col 16 to line 73, col 26 of module simpleMessage: 3
+  line 76, col 16 to line 76, col 26 of module simpleMessage: 11
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2221:0 @!@!@
-  line 73, col 31 to line 73, col 44 of module simpleMessage: 0
+  line 76, col 31 to line 76, col 44 of module simpleMessage: 0
 @!@!@ENDMSG 2221 @!@!@
 @!@!@STARTMSG 2202:0 @!@!@
 End of statistics.
 @!@!@ENDMSG 2202 @!@!@
 @!@!@STARTMSG 2200:0 @!@!@
-Progress(2) at 2025-07-28 00:21:34: 5 states generated (128 s/min), 3 distinct states found (77 ds/min), 0 states left on queue.
+Progress(6) at 2025-08-03 12:24:00: 19 states generated (361 s/min), 13 distinct states found (247 ds/min), 2 states left on queue.
 @!@!@ENDMSG 2200 @!@!@
 @!@!@STARTMSG 2199:0 @!@!@
-5 states generated, 3 distinct states found, 0 states left on queue.
+19 states generated, 13 distinct states found, 2 states left on queue.
 @!@!@ENDMSG 2199 @!@!@
 @!@!@STARTMSG 2194:0 @!@!@
-The depth of the complete state graph search is 2.
+The depth of the complete state graph search is 6.
 @!@!@ENDMSG 2194 @!@!@
 @!@!@STARTMSG 2268:0 @!@!@
 The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 2 and the 95th percentile is 2).
 @!@!@ENDMSG 2268 @!@!@
 @!@!@STARTMSG 2186:0 @!@!@
-Finished in 2364ms at (2025-07-28 00:21:34)
+Finished in 3182ms at (2025-08-03 12:24:00)
 @!@!@ENDMSG 2186 @!@!@

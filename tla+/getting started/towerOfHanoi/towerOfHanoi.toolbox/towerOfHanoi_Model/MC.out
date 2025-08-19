@@ -2,7 +2,7 @@
 TLC2 Version 2.19 of 08 August 2024 (rev: 5a47802)
 @!@!@ENDMSG 2262 @!@!@
 @!@!@STARTMSG 2187:0 @!@!@
-Running breadth-first search Model-Checking with fp 36 and seed 1451173316037171988 with 2 workers on 4 cores with 1175MB heap and 2642MB offheap memory [pid: 8349] (Linux 6.14.0-24-generic amd64, AdoptOpenJDK 14.0.1 x86_64, OffHeapDiskFPSet, DiskStateQueue).
+Running breadth-first search Model-Checking with fp 6 and seed -1824241778598164951 with 2 workers on 4 cores with 1881MB heap and 4228MB offheap memory [pid: 36673] (Linux 6.14.0-27-generic amd64, AdoptOpenJDK 14.0.1 x86_64, OffHeapDiskFPSet, DiskStateQueue).
 @!@!@ENDMSG 2187 @!@!@
 @!@!@STARTMSG 2220:0 @!@!@
 Starting SANY...
@@ -10,11 +10,11 @@ Starting SANY...
 Parsing file /home/ngavali/myprojects/github.com/rationalbear/tla+/getting started/towerOfHanoi/towerOfHanoi.toolbox/towerOfHanoi_Model/MC.tla
 Parsing file /home/ngavali/myprojects/github.com/rationalbear/tla+/getting started/towerOfHanoi/towerOfHanoi.toolbox/towerOfHanoi_Model/towerOfHanoi.tla
 Labels added.
-Parsing file /home/ngavali/Downloads/TLAToolbox-1.7.4-linux.gtk.x86_64/toolbox/plugins/org.lamport.tlatools_1.0.0.202408081326/tla2sany/StandardModules/TLC.tla
-Parsing file /home/ngavali/Downloads/TLAToolbox-1.7.4-linux.gtk.x86_64/toolbox/plugins/org.lamport.tlatools_1.0.0.202408081326/tla2sany/StandardModules/Sequences.tla
-Parsing file /home/ngavali/Downloads/TLAToolbox-1.7.4-linux.gtk.x86_64/toolbox/plugins/org.lamport.tlatools_1.0.0.202408081326/tla2sany/StandardModules/Integers.tla
-Parsing file /home/ngavali/Downloads/TLAToolbox-1.7.4-linux.gtk.x86_64/toolbox/plugins/org.lamport.tlatools_1.0.0.202408081326/tla2sany/StandardModules/Naturals.tla
-Parsing file /home/ngavali/Downloads/TLAToolbox-1.7.4-linux.gtk.x86_64/toolbox/plugins/org.lamport.tlatools_1.0.0.202408081326/tla2sany/StandardModules/FiniteSets.tla
+Parsing file /home/ngavali/myprojects/TLAToolbox-1.7.4-linux.gtk.x86_64/toolbox/plugins/org.lamport.tlatools_1.0.0.202408081326/tla2sany/StandardModules/TLC.tla
+Parsing file /home/ngavali/myprojects/TLAToolbox-1.7.4-linux.gtk.x86_64/toolbox/plugins/org.lamport.tlatools_1.0.0.202408081326/tla2sany/StandardModules/Sequences.tla
+Parsing file /home/ngavali/myprojects/TLAToolbox-1.7.4-linux.gtk.x86_64/toolbox/plugins/org.lamport.tlatools_1.0.0.202408081326/tla2sany/StandardModules/Integers.tla
+Parsing file /home/ngavali/myprojects/TLAToolbox-1.7.4-linux.gtk.x86_64/toolbox/plugins/org.lamport.tlatools_1.0.0.202408081326/tla2sany/StandardModules/Naturals.tla
+Parsing file /home/ngavali/myprojects/TLAToolbox-1.7.4-linux.gtk.x86_64/toolbox/plugins/org.lamport.tlatools_1.0.0.202408081326/tla2sany/StandardModules/FiniteSets.tla
 Semantic processing of module Naturals
 Semantic processing of module Sequences
 Semantic processing of module FiniteSets
@@ -26,13 +26,13 @@ Semantic processing of module MC
 SANY finished.
 @!@!@ENDMSG 2219 @!@!@
 @!@!@STARTMSG 2185:0 @!@!@
-Starting... (2025-07-27 13:17:48)
+Starting... (2025-08-03 12:30:02)
 @!@!@ENDMSG 2185 @!@!@
 @!@!@STARTMSG 2189:0 @!@!@
 Computing initial states...
 @!@!@ENDMSG 2189 @!@!@
 @!@!@STARTMSG 2190:0 @!@!@
-Finished computing initial states: 1 distinct state generated at 2025-07-27 13:17:49.
+Finished computing initial states: 1 distinct state generated at 2025-08-03 12:30:04.
 @!@!@ENDMSG 2190 @!@!@
 @!@!@STARTMSG 2132:1 @!@!@
 The first argument of Assert evaluated to FALSE; the second argument was:
@@ -90,7 +90,7 @@ expressions at the following positions:
 
 @!@!@ENDMSG 2103 @!@!@
 @!@!@STARTMSG 2201:0 @!@!@
-The coverage statistics at 2025-07-27 13:17:49
+The coverage statistics at 2025-08-03 12:30:05
 @!@!@ENDMSG 2201 @!@!@
 @!@!@STARTMSG 2773:0 @!@!@
 <Init line 35, col 1 to line 35, col 4 of module towerOfHanoi>: 2:2
@@ -138,11 +138,11 @@ The coverage statistics at 2025-07-27 13:17:49
 End of statistics.
 @!@!@ENDMSG 2202 @!@!@
 @!@!@STARTMSG 2200:0 @!@!@
-Progress(9) at 2025-07-27 13:17:49: 77 states generated (1,685 s/min), 27 distinct states found (591 ds/min), 0 states left on queue.
+Progress(8) at 2025-08-03 12:30:05: 77 states generated (1,394 s/min), 27 distinct states found (488 ds/min), 0 states left on queue.
 @!@!@ENDMSG 2200 @!@!@
 @!@!@STARTMSG 2199:0 @!@!@
 77 states generated, 27 distinct states found, 0 states left on queue.
 @!@!@ENDMSG 2199 @!@!@
 @!@!@STARTMSG 2186:0 @!@!@
-Finished in 2755ms at (2025-07-27 13:17:49)
+Finished in 3328ms at (2025-08-03 12:30:05)
 @!@!@ENDMSG 2186 @!@!@

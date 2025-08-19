@@ -1,0 +1,47 @@
+strict digraph DiskGraph {
+edge [colorscheme="paired12"]
+nodesep=0.35;
+subgraph cluster_graph {
+color="white";
+-874658046526276314 [label="/\\ in_transit = {}\n/\\ can_send = TRUE\n/\\ receive = <<>>\n/\\ pc = \"Lbl_1\"\n/\\ to_send = <<1, 2, 3>>",style = filled]
+-874658046526276314 -> 5679340028015051474 [label="",color="2",fontcolor="2"];
+5679340028015051474 [label="/\\ in_transit = {1}\n/\\ can_send = FALSE\n/\\ receive = <<>>\n/\\ pc = \"Lbl_2\"\n/\\ to_send = <<2, 3>>"];
+-874658046526276314 -> -6614420102711093546 [label="",color="2",fontcolor="2"];
+-6614420102711093546 [label="/\\ in_transit = {1}\n/\\ can_send = FALSE\n/\\ receive = <<>>\n/\\ pc = \"Lbl_1\"\n/\\ to_send = <<2, 3>>"];
+-6614420102711093546 -> 5679340028015051474 [label="",color="2",fontcolor="2"];
+-6614420102711093546 -> -6614420102711093546 [label="",color="2",fontcolor="2"];
+5679340028015051474 -> -6249769203226382358 [label="",color="3",fontcolor="3"];
+-6249769203226382358 [label="/\\ in_transit = {}\n/\\ can_send = TRUE\n/\\ receive = <<1>>\n/\\ pc = \"Lbl_1\"\n/\\ to_send = <<2, 3>>"];
+5679340028015051474 -> 5622005609940515807 [label="",color="3",fontcolor="3"];
+5622005609940515807 [label="/\\ in_transit = {}\n/\\ can_send = FALSE\n/\\ receive = <<1>>\n/\\ pc = \"Lbl_1\"\n/\\ to_send = <<2, 3>>"];
+-6249769203226382358 -> 207372902066981213 [label="",color="2",fontcolor="2"];
+207372902066981213 [label="/\\ in_transit = {2}\n/\\ can_send = FALSE\n/\\ receive = <<1>>\n/\\ pc = \"Lbl_2\"\n/\\ to_send = <<3>>"];
+-6249769203226382358 -> 6445609482822768907 [label="",color="2",fontcolor="2"];
+6445609482822768907 [label="/\\ in_transit = {2}\n/\\ can_send = FALSE\n/\\ receive = <<1>>\n/\\ pc = \"Lbl_1\"\n/\\ to_send = <<3>>"];
+207372902066981213 -> -500627090623197154 [label="",color="3",fontcolor="3"];
+-500627090623197154 [label="/\\ in_transit = {}\n/\\ can_send = TRUE\n/\\ receive = <<1, 2>>\n/\\ pc = \"Lbl_1\"\n/\\ to_send = <<3>>"];
+207372902066981213 -> 2183214499685041195 [label="",color="3",fontcolor="3"];
+2183214499685041195 [label="/\\ in_transit = {}\n/\\ can_send = FALSE\n/\\ receive = <<1, 2>>\n/\\ pc = \"Lbl_1\"\n/\\ to_send = <<3>>"];
+6445609482822768907 -> 207372902066981213 [label="",color="2",fontcolor="2"];
+6445609482822768907 -> 6445609482822768907 [label="",color="2",fontcolor="2"];
+5622005609940515807 -> -6566061285521444901 [label="",color="2",fontcolor="2"];
+-6566061285521444901 [label="/\\ in_transit = {}\n/\\ can_send = FALSE\n/\\ receive = <<1>>\n/\\ pc = \"Lbl_2\"\n/\\ to_send = <<2, 3>>"];
+-500627090623197154 -> -3691273280783150360 [label="",color="2",fontcolor="2"];
+-3691273280783150360 [label="/\\ in_transit = {3}\n/\\ can_send = FALSE\n/\\ receive = <<1, 2>>\n/\\ pc = \"Lbl_2\"\n/\\ to_send = <<>>"];
+5622005609940515807 -> 5622005609940515807 [label="",color="2",fontcolor="2"];
+2183214499685041195 -> 5034898110573270141 [label="",color="2",fontcolor="2"];
+5034898110573270141 [label="/\\ in_transit = {}\n/\\ can_send = FALSE\n/\\ receive = <<1, 2>>\n/\\ pc = \"Lbl_2\"\n/\\ to_send = <<3>>"];
+2183214499685041195 -> 2183214499685041195 [label="",color="2",fontcolor="2"];
+-500627090623197154 -> -8734214079253156219 [label="",color="2",fontcolor="2"];
+-8734214079253156219 [label="/\\ in_transit = {3}\n/\\ can_send = FALSE\n/\\ receive = <<1, 2>>\n/\\ pc = \"Lbl_1\"\n/\\ to_send = <<>>"];
+{rank = same; -874658046526276314;}
+{rank = same; -6614420102711093546;5679340028015051474;}
+{rank = same; -6249769203226382358;5622005609940515807;}
+{rank = same; 207372902066981213;6445609482822768907;}
+{rank = same; -500627090623197154;2183214499685041195;}
+}
+subgraph cluster_legend {graph[style=bold];label = "Next State Actions" style="solid"
+node [ labeljust="l",colorscheme="paired12",style=filled,shape=record ]
+Lbl_2 [label="Lbl_2",fillcolor=3]
+Lbl_1 [label="Lbl_1",fillcolor=2]
+}}
