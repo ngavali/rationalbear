@@ -14,7 +14,38 @@ impl ListNode {
     }
 }
 
+use std::collections::BinaryHeap;
+
+impl std::cmp::PartialOrd for ListNode {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.val.partial_cmp(&other.val)
+    }
+}
+
+impl std::cmp::Ord for ListNode {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.val.cmp(&other.val)
+    }
+}
+
 impl Solution {
+    pub fn merge_k_lists(lists: Vec<Option<Box<ListNode>>>) -> Option<Box<ListNode>> {
+        let mut heap_store = BinaryHeap::new();
+        lists.into_iter().for_each(|mut list| {
+            while list.is_some() {
+                let next = list.as_mut().unwrap().next.take();
+                heap_store.push(list);
+                list = next;
+            }
+        });
+        let mut node = None;
+        while let Some(mut curr_node) = heap_store.pop() {
+            curr_node.as_mut().unwrap().next = node;
+            node = curr_node;
+        }
+        node
+    }
+
     fn merge_two_lists(
         mut list_a: Option<Box<ListNode>>,
         mut list_b: Option<Box<ListNode>>,
@@ -58,13 +89,16 @@ impl Solution {
         )
     }
 
-    pub fn merge_k_lists(lists: Vec<Option<Box<ListNode>>>) -> Option<Box<ListNode>> {
+    pub fn merge_k_lists_divide_and_conquer(
+        lists: Vec<Option<Box<ListNode>>>,
+    ) -> Option<Box<ListNode>> {
         let i = 0;
         if lists.len() >= 1 {
             return Solution::divide(&lists, 0, lists.len() - 1);
         }
         None
     }
+
 }
 
 fn main() {
