@@ -4,45 +4,30 @@ struct Solution;
 
 impl Solution {
     pub fn sort_vowels(s: String) -> String {
-        let mut vowels: [u8; 128] = [0;128];
-            vowels[b'a' as usize]=1;
-            vowels[b'e' as usize]=1;
-            vowels[b'i' as usize]=1;
-            vowels[b'o' as usize]=1;
-            vowels[b'u' as usize]=1;
-            vowels[b'A' as usize]=1;
-            vowels[b'E' as usize]=1;
-            vowels[b'I' as usize]=1;
-            vowels[b'O' as usize]=1;
-            vowels[b'U' as usize]=1;
-        fn get_vowel(vowels_in_string: &mut [i32;128]) -> Option<u8> {
-            let vowels_list = [b'A',b'E',b'I',b'O',b'U',b'a', b'e', b'i', b'o', b'u'];
-            let mut i = 0;
-            while i < vowels_list.len() {
-                if vowels_in_string[vowels_list[i] as usize] != 0 {
-                    vowels_in_string[vowels_list[i] as usize] -=1;
-                    return Some(vowels_list[i]);
-                }
-                i+=1;
+        fn is_vowel(v: u8) -> bool {
+            match v.to_ascii_lowercase() {
+                b'a'|b'e'|b'i'|b'o'|b'u' => true,
+                _ => false
             }
-            None
         }
+        let vowels_list = [b'A',b'E',b'I',b'O',b'U',b'a', b'e', b'i', b'o', b'u'];
         let mut chars: Vec<u8> = s.as_bytes().to_vec();
         let mut vowels_in_string: [i32;128] = [0; 128];
         chars
-            .clone()
-            .into_iter().enumerate()
-            .for_each(|(i, c)| {
-                if vowels[c as usize] == 1 {
+            .iter()
+            .for_each(|&c| {
+                if is_vowel(c) {
                     vowels_in_string[c as usize]+=1;
                 };
             });
-
+        let mut curr_pos = 0;
         for i in 0..chars.len() {
-            if vowels[chars[i] as usize] == 1 { 
-                if let Some(v) = get_vowel(&mut vowels_in_string) {
-                    chars[i] = v;
+            if is_vowel(chars[i]) { 
+                while vowels_in_string[vowels_list[curr_pos] as usize] == 0 {
+                    curr_pos+=1;
                 }
+                vowels_in_string[vowels_list[curr_pos] as usize] -=1;
+                chars[i] = vowels_list[curr_pos];
             }
         }
         String::from_utf8(chars).unwrap_or(s)
