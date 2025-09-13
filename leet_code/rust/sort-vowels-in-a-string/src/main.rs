@@ -2,14 +2,19 @@
 
 struct Solution;
 
-use std::collections::HashMap;
-
 impl Solution {
     pub fn sort_vowels(s: String) -> String {
-        let vowels: HashMap<u8, bool> = vec![b'a', b'e', b'i', b'o', b'u', b'A', b'E',b'I',b'O',b'U']
-            .iter()
-            .map(|&v| (v, true))
-            .collect();
+        let mut vowels: [u8; 128] = [0;128];
+            vowels[b'a' as usize]=1;
+            vowels[b'e' as usize]=1;
+            vowels[b'i' as usize]=1;
+            vowels[b'o' as usize]=1;
+            vowels[b'u' as usize]=1;
+            vowels[b'A' as usize]=1;
+            vowels[b'E' as usize]=1;
+            vowels[b'I' as usize]=1;
+            vowels[b'O' as usize]=1;
+            vowels[b'U' as usize]=1;
         fn get_vowel(vowels_in_string: &mut [i32;128]) -> Option<u8> {
             let vowels_list = [b'A',b'E',b'I',b'O',b'U',b'a', b'e', b'i', b'o', b'u'];
             let mut i = 0;
@@ -28,13 +33,13 @@ impl Solution {
             .clone()
             .into_iter().enumerate()
             .for_each(|(i, c)| {
-                if vowels.get(&c).is_some() {
+                if vowels[c as usize] == 1 {
                     vowels_in_string[c as usize]+=1;
                 };
             });
 
         for i in 0..chars.len() {
-            if vowels.get(&chars[i]).is_some() { 
+            if vowels[chars[i] as usize] == 1 { 
                 if let Some(v) = get_vowel(&mut vowels_in_string) {
                     chars[i] = v;
                 }
