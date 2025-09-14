@@ -2,51 +2,53 @@
 
 struct Solution;
 
-#[derive(Debug)]
-struct DSU {
-    parent: Vec<i32>,
-    rank: Vec<i32>,
+struct Dsu {
+    parent: Vec<usize>,
+    rank: Vec<usize>,
 }
 
-impl DSU {
-    fn new(s: i32) -> Self {
-        DSU {
+impl Dsu {
+    fn new(s: usize) -> Self {
+        Dsu {
             parent: (0..s).collect(),
-            rank: vec![1; s as usize],
+            rank: vec![1;s],
         }
     }
 
-    fn find_set(&mut self, v: i32) -> i32 {
-        if v != self.parent[v as usize] {
-            self.parent[v as usize] = self.find_set(self.parent[v as usize]);
+    fn find_set_mut(&mut self, v: usize) -> usize {
+        if v != self.parent[v] {
+            self.parent[v] = self.find_set_mut(self.parent[v]);
         }
-        self.parent[v as usize]
+        self.parent[v]
     }
 
-    fn union_sets(&mut self, (mut a, mut b): (i32, i32)) {
-        (a, b) = (self.find_set(a), self.find_set(b));
+    fn find_set(&self, v: usize) -> usize {
+        self.parent[v]
+    }
+
+    fn union_sets(&mut self, (mut a, mut b): (usize, usize)) {
+        (a, b) = (self.find_set_mut(a), self.find_set_mut(b));
         if a != b {
-            if self.rank[a as usize] > self.rank[b as usize] {
-                (a, b) = (b, a);
+            if self.rank[a] > self.rank[b] {
+                self.parent[b] = a;
+                self.rank[a] += self.rank[b];
+            } else {
+                self.parent[a] = b;
+                self.rank[b] += self.rank[a];
             }
-            self.parent[a as usize] = b;
-            self.rank[b as usize] += self.rank[a as usize];
         }
     }
 
-    fn get_size(&mut self, a: i32) -> i32 {
-        let x = self.find_set(a);
-        self.rank[x as usize]
+    fn get_size(&self, a: usize) -> usize {
+        self.rank[self.find_set(a)]
     }
 }
-
-use std::collections::VecDeque;
 
 impl Solution {
     fn dfs(
         node: usize,
-        adj: &Vec<Vec<usize>>,
-        is_visited: &mut Vec<bool>,
+        adj: &[Vec<usize>],
+        is_visited: &mut [bool],
         visited: &mut i32,
     ) {
         is_visited[node] = true;
@@ -60,37 +62,24 @@ impl Solution {
 
     fn bfs(
         node: usize,
-        adj: &Vec<Vec<usize>>,
-        is_visited: &mut Vec<bool>,
+        adj: &[Vec<usize>],
+        is_visited: &mut [bool],
         visited: &mut i32,
     ) {
-        let mut queue = VecDeque::new();
-        queue.push_back(node);
-        while !queue.is_empty() {
-            let curr_node = queue.pop_front().unwrap();
-            println!(" curr_node -> {curr_node}");
+        let mut queue = Vec::new();
+        queue.push(node);
+        is_visited[node] = true;
+        while let Some(curr_node) = queue.pop() {
             *visited += 1;
             for &next in adj[curr_node].iter() {
                 if !is_visited[next] {
                     is_visited[next] = true;
-                    queue.push_back(next);
+                    queue.push(next);
                 }
             }
         }
     }
-    pub fn reachable_nodes(n: i32, edges: Vec<Vec<i32>>, restricted: Vec<i32>) -> i32 {
-        let mut dsu = DSU::new(n);
-        let mut restricted = restricted;
-        restricted.sort();
 
-        for edge in edges.iter() {
-            let e = (edge[0], edge[1]);
-            if !restricted.binary_search(&e.0).is_ok() && !restricted.binary_search(&e.1).is_ok() {
-                dsu.union_sets(e);
-            }
-        }
-        dsu.get_size(0)
-    }
     pub fn reachable_nodes_other(n: i32, edges: Vec<Vec<i32>>, restricted: Vec<i32>) -> i32 {
         let n = n as usize;
         let mut restricted = restricted;
@@ -103,15 +92,25 @@ impl Solution {
         }
 
         let mut is_visited = vec![false; n];
-        is_visited[0] = true;
         for &node in restricted.iter() {
             is_visited[node as usize] = true;
         }
         let mut visited = 0;
         //Self::dfs(0, &adj,  &mut is_visited, &mut visited);
         Self::bfs(0, &adj,  &mut is_visited, &mut visited);
-        println!( "{edges:?} \n ->restricted = {restricted:?}\n-> adj = {adj:?}\n-> is_visited = {is_visited:?}\n-> visited = {visited}");
         visited
+    }
+
+    pub fn reachable_nodes(n: i32, edges: Vec<Vec<i32>>, restricted: Vec<i32>) -> i32 {
+        let mut dsu = Dsu::new(n as usize);
+        let mut restricted = restricted;
+        restricted.sort();
+        for edge in edges.iter() {
+            if restricted.binary_search(&edge[0]).is_err() && restricted.binary_search(&edge[1]).is_err() {
+                dsu.union_sets((edge[0] as usize, edge[1] as usize));
+            }
+        }
+        dsu.get_size(0) as i32
     }
 }
 
