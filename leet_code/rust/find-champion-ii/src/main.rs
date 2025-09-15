@@ -2,6 +2,7 @@
 struct Solution;
 
 impl Solution {
+
     pub fn find_champion(n: i32, edges: Vec<Vec<i32>>) -> i32 {
         let mut indegree: Vec<bool> = vec![false;n as usize];
         for edge in edges {
@@ -12,6 +13,26 @@ impl Solution {
             1 => nonzero_indegree[0].0 as i32,
             _ => -1
         }
+    }
+
+    pub fn find_champion_break_early(n: i32, edges: Vec<Vec<i32>>) -> i32 {
+        let mut indegree: Vec<bool> = vec![false;n as usize];
+        for edge in edges {
+            indegree[edge[1] as usize] = true;
+        }
+        let (mut i, mut pos ) =(0,0) ;
+        let mut nonzero_indegree = 0;
+        for &v in indegree.iter() {
+            if !v {
+                pos=i;
+                nonzero_indegree+=1;
+                if nonzero_indegree > 1 {
+                    return -1;
+                }
+            }
+            i+=1;
+        }
+        pos
     }
     //Alternate
     //Is this faster?
