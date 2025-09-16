@@ -90,4 +90,23 @@ impl Solution {
     }
 }
 
+//Alternate 2
+impl Solution {
+    pub fn longest_valid_parentheses(s: String) -> i32 {
+        let mut output = 0;
+        for (i, c) in s.chars().enumerate() {
+            if c == ')' { continue }
+            let mut p = 1;
+            for (i, c) in s[i+1..].chars().enumerate() {
+                p += if c == '(' { 1 } else { -1 };
+                if p == 0 {
+                    output = output.max(i+2);
+                } else if p == -1 {
+                    break;
+                }
+            }
+        }
+        output as i32
+    }
+}
 */
