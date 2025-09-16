@@ -2,58 +2,15 @@
 struct Solution;
 
 impl Solution {
-    fn get_box_number(pos: (usize, usize)) -> usize {
-        3 * (pos.0 / 3) + pos.1 / 3
-    }
-
-    fn is_number_used(
-        number: usize,
-        pos: (usize, usize),
-        row_clue: &mut Vec<Vec<bool>>,
-        col_clue: &mut Vec<Vec<bool>>,
-        three_by_three_boxes: &mut Vec<Vec<bool>>,
-    ) -> bool {
-        row_clue[pos.0][number]
-            || col_clue[pos.1][number]
-            || three_by_three_boxes[Self::get_box_number(pos)][number]
-    }
-
-    fn write_number(
-        number: usize,
-        pos: (usize, usize),
-        grid_numberic: &mut Vec<Vec<usize>>,
-        row_clue: &mut Vec<Vec<bool>>,
-        col_clue: &mut Vec<Vec<bool>>,
-        three_by_three_boxes: &mut Vec<Vec<bool>>,
-    ) {
-        grid_numberic[pos.0][pos.1] = number;
-        row_clue[pos.0][number] = true;
-        col_clue[pos.1][number] = true;
-        three_by_three_boxes[Self::get_box_number(pos)][number] = true;
-    }
-
-    fn erase_number(
-        number: usize,
-        pos: (usize, usize),
-        grid_numberic: &mut Vec<Vec<usize>>,
-        row_clue: &mut Vec<Vec<bool>>,
-        col_clue: &mut Vec<Vec<bool>>,
-        three_by_three_boxes: &mut Vec<Vec<bool>>,
-    ) {
-        grid_numberic[pos.0][pos.1] = 0;
-        row_clue[pos.0][number] = false;
-        col_clue[pos.1][number] = false;
-        three_by_three_boxes[Self::get_box_number(pos)][number] = false;
-    }
 
     fn get_next_empty_cell(
         size: usize,
         mut pos: (usize, usize),
-        grid_numberic: &Vec<Vec<usize>>,
+        grid_numeric: &[Vec<usize>],
     ) -> Option<(usize, usize)> {
         while pos.0 < size {
             while pos.1 < size {
-                if grid_numberic[pos.0][pos.1] == 0 {
+                if grid_numeric[pos.0][pos.1] == 0 {
                     return Some(pos);
                 }
                 pos.1 += 1
@@ -66,93 +23,79 @@ impl Solution {
 
     fn backtrack(
         size: usize,
-        pos: (usize, usize),
-        grid_numberic: &mut Vec<Vec<usize>>,
-        row_clue: &mut Vec<Vec<bool>>,
-        col_clue: &mut Vec<Vec<bool>>,
-        three_by_three_boxes: &mut Vec<Vec<bool>>,
-        grid_final: &mut Vec<Vec<usize>>,
+        pos: &(usize, usize),
+        grid_numeric: &mut [Vec<usize>],
+        row_clue_flags: &mut [i32],
+        col_clue_flags: &mut [i32],
+        three_by_three_boxes_flags: &mut [i32],
+        solution: &mut bool,
     ) {
-        if let Some(pos) = Self::get_next_empty_cell(size, pos, grid_numberic) {
+
+        if let Some(pos) = Self::get_next_empty_cell(size, *pos, grid_numeric) {
             for num in 1..=9 {
-                if !Self::is_number_used(
-                    num,
-                    (pos.0, pos.1),
-                    row_clue,
-                    col_clue,
-                    three_by_three_boxes,
-                ) {
-                    Self::write_number(
-                        num,
-                        (pos.0, pos.1),
-                        grid_numberic,
-                        row_clue,
-                        col_clue,
-                        three_by_three_boxes,
-                    );
+                let mask = 1 << num;
+                if (row_clue_flags[pos.0] & mask) == 0
+                    && (col_clue_flags[pos.1] & mask) == 0
+                    && (three_by_three_boxes_flags[3 * (pos.0 / 3) + pos.1 / 3] & mask) == 0
+                 {
+                    grid_numeric[pos.0][pos.1] = num;
+                    row_clue_flags[pos.0] |= mask;
+                    col_clue_flags[pos.1] |= mask;
+                    three_by_three_boxes_flags[3 * (pos.0 / 3) + pos.1 / 3] |= mask;
                     Self::backtrack(
                         size,
-                        pos,
-                        grid_numberic,
-                        row_clue,
-                        col_clue,
-                        three_by_three_boxes,
-                        grid_final,
+                        &pos,
+                        grid_numeric,
+                        row_clue_flags,
+                        col_clue_flags,
+                        three_by_three_boxes_flags,
+                        solution,
                     );
-                    Self::erase_number(
-                        num,
-                        (pos.0, pos.1),
-                        grid_numberic,
-                        row_clue,
-                        col_clue,
-                        three_by_three_boxes,
-                    );
+                    if !*solution {
+                        grid_numeric[pos.0][pos.1] = 0;
+                        row_clue_flags[pos.0] ^= mask;
+                        col_clue_flags[pos.1] ^= mask;
+                        three_by_three_boxes_flags[3 * (pos.0 / 3) + pos.1 / 3] ^= mask;
+                    }
                 }
             }
         } else {
-            grid_numberic.iter().enumerate().for_each(|(i, row)| {
-                row.iter()
-                    .enumerate()
-                    .for_each(|(j, col)| grid_final[i][j] = *col);
-            });
+            //There are no more empty places to fill
+            //We have a solution
+            *solution = true;
         }
     }
 
     pub fn solve_sudoku(board: &mut Vec<Vec<char>>) {
         let n = board.len();
-        let mut grid_numberic = vec![vec![0; n]; n];
-        let mut row_clue = vec![vec![false; n + 1]; n];
-        let mut col_clue = vec![vec![false; n + 1]; n];
-        let mut three_by_three_boxes = vec![vec![false; n + 1]; n];
-        let mut grid_final = vec![vec![0; n]; n];
+        let mut grid_numeric = vec![vec![0; n]; n];
+        let mut row_clue_flags = vec![0; n];
+        let mut col_clue_flags = vec![0; n];
+        let mut three_by_three_boxes_flags = vec![0; n];
+        board.into_iter().enumerate().for_each(|(i, row) |{
+            row.into_iter().enumerate().for_each(|(j, num) |{
+                grid_numeric[i][j] = num.to_digit(10).unwrap_or(0) as usize;
+                if grid_numeric[i][j] != 0 {
+                    let mask = 1 << grid_numeric[i][j];
+                    row_clue_flags[i] |= mask;
+                    col_clue_flags[j] |= mask;
+                    three_by_three_boxes_flags[3 * (i / 3) + j / 3] |= mask;
+                }
+            })
+        });
+        let mut solution = false;
 
-        for i in 0..n {
-            for j in 0..n {
-                grid_numberic[i][j] = board[i][j].to_digit(10).unwrap_or(0) as usize;
-                if grid_numberic[i][j] != 0 {
-                    row_clue[i][grid_numberic[i][j]] = true;
-                    col_clue[j][grid_numberic[i][j]] = true;
-                }
-            }
-        }
-        for i in 0..n {
-            for j in 0..n {
-                if grid_numberic[i][j] != 0 {
-                    three_by_three_boxes[Self::get_box_number((i, j))][grid_numberic[i][j]] = true;
-                }
-            }
-        }
         Self::backtrack(
             n,
-            (0, 0),
-            &mut grid_numberic,
-            &mut row_clue,
-            &mut col_clue,
-            &mut three_by_three_boxes,
-            &mut grid_final,
+            &(0, 0),
+            &mut grid_numeric,
+            &mut row_clue_flags,
+            &mut col_clue_flags,
+            &mut three_by_three_boxes_flags,
+            &mut solution,
         );
 
-        grid_final.into_iter().enumerate().for_each(|(i, row)| {
+        grid_numeric.into_iter().enumerate().for_each(|(i, row)| {
             row.into_iter()
                 .enumerate()
                 .for_each(|(j, col)| board[i][j] = char::from_digit(col as u32, 10).unwrap())
