@@ -12,9 +12,9 @@ impl Solution {
         col_clue_flags: &mut [i32],
         three_by_three_boxes_flags: &mut [i32],
         solution: &mut bool,
-        empty_cells: &mut VecDeque<((usize, usize), Vec<usize>)>
+        empty_cells: &mut VecDeque<((usize, usize), Vec<usize>)>,
     ) {
-        if let Some((pos,choices)) = empty_cells.pop_front() {
+        if let Some((pos, choices)) = empty_cells.pop_front() {
             for &num in choices.iter() {
                 let mask = 1 << num;
                 if (row_clue_flags[pos.0] & mask) == 0
@@ -33,7 +33,7 @@ impl Solution {
                         col_clue_flags,
                         three_by_three_boxes_flags,
                         solution,
-                        empty_cells
+                        empty_cells,
                     );
                     if !*solution {
                         grid_numeric[pos.0][pos.1] = 0;
@@ -44,7 +44,7 @@ impl Solution {
                 }
             }
             if !*solution {
-                empty_cells.push_front((pos,choices));
+                empty_cells.push_front((pos, choices));
             }
         } else {
             //There are no more empty places to fill
@@ -59,8 +59,8 @@ impl Solution {
         let mut row_clue_flags = vec![0; n];
         let mut col_clue_flags = vec![0; n];
         let mut three_by_three_boxes_flags = vec![0; n];
-        board.into_iter().enumerate().for_each(|(i, row) |{
-            row.into_iter().enumerate().for_each(|(j, num) |{
+        board.into_iter().enumerate().for_each(|(i, row)| {
+            row.into_iter().enumerate().for_each(|(j, num)| {
                 grid_numeric[i][j] = num.to_digit(10).unwrap_or(0) as usize;
                 if grid_numeric[i][j] != 0 {
                     let mask = 1 << grid_numeric[i][j];
@@ -71,27 +71,39 @@ impl Solution {
             })
         });
         let mut empty_cells = Vec::new();
-        grid_numeric.iter().enumerate().for_each(|(i, row) |{
-            row.iter().enumerate().for_each(|(j, num) |{
+        grid_numeric.iter().enumerate().for_each(|(i, row)| {
+            row.iter().enumerate().for_each(|(j, num)| {
                 if grid_numeric[i][j] == 0 {
-                    let ones = (row_clue_flags[i] as u32).count_ones() + (col_clue_flags[j] as u32).count_ones() + (three_by_three_boxes_flags[3 * (i / 3) + j / 3] as i32).count_ones();
+                    let ones = (row_clue_flags[i] as u32).count_ones()
+                        + (col_clue_flags[j] as u32).count_ones()
+                        + (three_by_three_boxes_flags[3 * (i / 3) + j / 3] as i32).count_ones();
+                    //Lets keep choices prepared
                     let mut possible_choices = Vec::new();
                     for num in 1..=9 {
                         let mask: i32 = 1 << num;
-                        if (row_clue_flags[i] & mask) == 0 && (col_clue_flags[j] & mask) == 0 && (three_by_three_boxes_flags[3 * (i / 3) + j / 3] & mask) == 0 {
-                           possible_choices.push(num as usize) ;
+                        if (row_clue_flags[i] & mask) == 0
+                            && (col_clue_flags[j] & mask) == 0
+                            && (three_by_three_boxes_flags[3 * (i / 3) + j / 3] & mask) == 0
+                        {
+                            possible_choices.push(num as usize);
                         }
                     }
                     empty_cells.push((ones, (i, j), possible_choices));
                 }
             })
         });
-        empty_cells.sort_by(|a, b| { b.0.cmp(&a.0) });
-        let mut empty_cells : VecDeque<((usize,usize), Vec<usize>)>= empty_cells.into_iter().map(|(_ ,b, c)| (b, c)).collect();
+        //Lets pick up cells with least choices to fill in
+        empty_cells.sort_by(|a, b| a.2.len().cmp(&b.2.len()));
+        for row in empty_cells.iter() {
+            println!("{row:?} ");
+        }
+        let mut empty_cells: VecDeque<((usize, usize), Vec<usize>)> =
+            empty_cells.into_iter().map(|(_, b, c)| (b, c)).collect();
         let mut solution = false;
+
         Self::backtrack(
             n,
-            (0,0),
+            (0, 0),
             &mut grid_numeric,
             &mut row_clue_flags,
             &mut col_clue_flags,
@@ -99,6 +111,7 @@ impl Solution {
             &mut solution,
             &mut empty_cells,
         );
+
         grid_numeric.into_iter().enumerate().for_each(|(i, row)| {
             row.into_iter()
                 .enumerate()
