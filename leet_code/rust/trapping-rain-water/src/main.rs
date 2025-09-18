@@ -8,7 +8,7 @@
 struct Solution;
 
 trait TrappedWaterQuantityCalculator<'a> {
-    fn solve(&self) -> i32;
+    fn compute(&self) -> i32;
 }
 struct TrappedWaterQuantityCalculatorUnImplemented;
 
@@ -19,7 +19,7 @@ impl TrappedWaterQuantityCalculatorUnImplemented {
 }
 
 impl<'a> TrappedWaterQuantityCalculator<'a> for TrappedWaterQuantityCalculatorUnImplemented {
-    fn solve(&self) -> i32 {
+    fn compute(&self) -> i32 {
         println!("I do nothing!!!");
         0
     }
@@ -44,7 +44,7 @@ impl<'a> TrappedWaterQuantityCalculatorUsingTwoPointer<'a> {
 }
 
 impl<'a> TrappedWaterQuantityCalculator<'a> for TrappedWaterQuantityCalculatorUsingStack<'a> {
-    fn solve(&self) -> i32 {
+    fn compute(&self) -> i32 {
         let mut stack: Vec<(usize, i32)> = Vec::with_capacity(self.height.len());
         let mut trapped_water_quantity = 0;
 
@@ -65,7 +65,7 @@ impl<'a> TrappedWaterQuantityCalculator<'a> for TrappedWaterQuantityCalculatorUs
 }
 
 impl<'a> TrappedWaterQuantityCalculator<'a> for TrappedWaterQuantityCalculatorUsingTwoPointer<'a> {
-    fn solve(&self) -> i32 {
+    fn compute(&self) -> i32 {
         if self.height.len() < 2 {
             return 0;
         }
@@ -78,17 +78,19 @@ impl<'a> TrappedWaterQuantityCalculator<'a> for TrappedWaterQuantityCalculatorUs
 
         while left <= right {
             match left_wall < right_wall {
-                true => {   match left_wall > self.height[left] {
+                true => {
+                    match left_wall > self.height[left] {
                         true => ans += left_wall - self.height[left],
                         false => left_wall = self.height[left],
                     }
-                left += 1;
+                    left += 1;
                 }
-                false => {  match right_wall > self.height[right] {
+                false => {
+                    match right_wall > self.height[right] {
                         true => ans += right_wall - self.height[right],
                         false => right_wall = self.height[right],
                     }
-                right -= 1;
+                    right -= 1;
                 }
             }
         }
@@ -115,16 +117,16 @@ impl TrappedWaterQuantityCalculatorStrategyBuilder {
     }
 }
 
-fn solve<'a>(strategy: Box<dyn TrappedWaterQuantityCalculator>) -> i32 {
-    strategy.solve()
+fn compute_trapped_water_quantity<'a>(strategy: Box<dyn TrappedWaterQuantityCalculator<'a> + 'a>) -> i32 {
+    strategy.compute()
 }
 
 impl Solution {
     pub fn trap(height: Vec<i32>) -> i32 {
         let strategy_builder = TrappedWaterQuantityCalculatorStrategyBuilder::new();
         //let strategy = strategy_builder.build("Stack", &height);
-        let strategy = strategy_builder.build("TwoPointer", &height);
-        strategy.solve()
+        let trapped_water_quantity_caclulator = strategy_builder.build("TwoPointer", &height);
+        compute_trapped_water_quantity(trapped_water_quantity_caclulator)
     }
 }
 
