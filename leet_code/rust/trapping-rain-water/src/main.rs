@@ -7,24 +7,124 @@
 
 struct Solution;
 
-impl Solution {
-    pub fn trap(height: Vec<i32>) -> i32 {
-        let mut stack: Vec<(usize, i32)> = Vec::with_capacity(height.len());
-        let mut trapped_water_amount = 0;
+trait TrappedWaterQuantityCalculator<'a> {
+    fn solve(&self) -> i32;
+}
+struct TrappedWaterQuantityCalculatorUnImplemented;
 
-        for (l, &right_h) in height.iter().enumerate() {
+impl TrappedWaterQuantityCalculatorUnImplemented {
+    fn new(height: &[i32]) -> Self {
+        TrappedWaterQuantityCalculatorUnImplemented {}
+    }
+}
+
+impl<'a> TrappedWaterQuantityCalculator<'a> for TrappedWaterQuantityCalculatorUnImplemented {
+    fn solve(&self) -> i32 {
+        println!("I do nothing!!!");
+        0
+    }
+}
+
+struct TrappedWaterQuantityCalculatorUsingStack<'a> {
+    height: &'a Vec<i32>,
+}
+
+impl<'a> TrappedWaterQuantityCalculatorUsingStack<'a> {
+    fn new(height: &'a Vec<i32>) -> Self {
+        TrappedWaterQuantityCalculatorUsingStack { height }
+    }
+}
+struct TrappedWaterQuantityCalculatorUsingTwoPointer<'a> {
+    height: &'a Vec<i32>,
+}
+impl<'a> TrappedWaterQuantityCalculatorUsingTwoPointer<'a> {
+    fn new(height: &'a Vec<i32>) -> Self {
+        TrappedWaterQuantityCalculatorUsingTwoPointer { height }
+    }
+}
+
+impl<'a> TrappedWaterQuantityCalculator<'a> for TrappedWaterQuantityCalculatorUsingStack<'a> {
+    fn solve(&self) -> i32 {
+        let mut stack: Vec<(usize, i32)> = Vec::with_capacity(self.height.len());
+        let mut trapped_water_quantity = 0;
+
+        for (right_loc, &right_h) in self.height.iter().enumerate() {
             while let Some(&(_, prev_h)) = stack.last()
                 && prev_h < right_h
             {
                 stack.pop();
-                if let Some(&(left_l, left_h)) = stack.last() {
-                    trapped_water_amount +=
-                        (left_h.min(right_h) - prev_h) * (l - left_l - 1) as i32;
+                if let Some(&(left_loc, left_h)) = stack.last() {
+                    trapped_water_quantity +=
+                        (left_h.min(right_h) - prev_h) * (right_loc - left_loc - 1) as i32;
                 }
             }
-            stack.push((l, right_h));
+            stack.push((right_loc, right_h));
         }
-        trapped_water_amount
+        trapped_water_quantity
+    }
+}
+
+impl<'a> TrappedWaterQuantityCalculator<'a> for TrappedWaterQuantityCalculatorUsingTwoPointer<'a> {
+    fn solve(&self) -> i32 {
+        if self.height.len() < 2 {
+            return 0;
+        }
+        let mut left_wall = self.height[0];
+        let mut right_wall = self.height[self.height.len() - 1];
+        let mut ans = 0;
+
+        let mut left = 1;
+        let mut right = self.height.len() - 2;
+
+        while left <= right {
+            match left_wall < right_wall {
+                true => {   match left_wall > self.height[left] {
+                        true => ans += left_wall - self.height[left],
+                        false => left_wall = self.height[left],
+                    }
+                left += 1;
+                }
+                false => {  match right_wall > self.height[right] {
+                        true => ans += right_wall - self.height[right],
+                        false => right_wall = self.height[right],
+                    }
+                right -= 1;
+                }
+            }
+        }
+        ans
+    }
+}
+
+struct TrappedWaterQuantityCalculatorStrategyBuilder {}
+
+impl TrappedWaterQuantityCalculatorStrategyBuilder {
+    fn new() -> Self {
+        TrappedWaterQuantityCalculatorStrategyBuilder {}
+    }
+    fn build<'a>(
+        &self,
+        name: &'a str,
+        height: &'a Vec<i32>,
+    ) -> Box<dyn TrappedWaterQuantityCalculator<'a> + 'a> {
+        match name {
+            "Stack" => Box::new(TrappedWaterQuantityCalculatorUsingStack::new(height)),
+            "TwoPointer" => Box::new(TrappedWaterQuantityCalculatorUsingTwoPointer::new(height)),
+            _ => Box::new(TrappedWaterQuantityCalculatorUnImplemented::new(height)),
+        }
+    }
+}
+
+fn solve<'a>(strategy: Box<dyn TrappedWaterQuantityCalculator>) -> i32 {
+    strategy.solve()
+}
+
+impl Solution {
+    pub fn trap(height: Vec<i32>) -> i32 {
+        let strategy_builder = TrappedWaterQuantityCalculatorStrategyBuilder::new();
+        //let strategy = strategy_builder.build("Stack", &height);
+        let strategy = strategy_builder.build("TwoPointer", &height);
+        strategy.solve()
     }
 }
 
