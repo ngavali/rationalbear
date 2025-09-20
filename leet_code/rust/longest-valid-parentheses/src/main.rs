@@ -1,6 +1,9 @@
 //https://leetcode.com/problems/longest-valid-parentheses/
 struct Solution;
 
+//Using stack
+//Store location of the invalid parentheses and start over on mismatch check length from the previously stored invalid parentheses
+//Pop location of previously stored invalid parentheses and push location of the current invalid parentheses
 impl Solution {
     pub fn longest_valid_parentheses(s: String) -> i32 {
         let mut ml = 0;
@@ -14,7 +17,7 @@ impl Solution {
             if stack.pop().is_some() && !stack.is_empty() {
                 ml = ml.max(pos as i32 - stack.last().unwrap());
                 continue;
-            } 
+            }
             stack.push(pos as i32);
         }
         ml
@@ -42,7 +45,7 @@ mod tests {
     }
 }
 
-/* 
+/*
  * Alternate solutions
  *
 impl Solution {
