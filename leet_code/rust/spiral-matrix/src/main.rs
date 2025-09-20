@@ -31,6 +31,7 @@ impl Solution {
             i = factor;
             j = factor;
         }
+        //Do this or check ans len in each of the inner while loop
         while ans.len() > size {
             ans.pop();
         }
