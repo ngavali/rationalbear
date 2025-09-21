@@ -1,11 +1,10 @@
 //https://leetcode.com/problems/design-task-manager/
 
 use std::cell::RefCell;
-use std::collections::HashMap;
 
 #[derive(Debug)]
 struct TaskManager {
-    tasks: RefCell<HashMap<i32, (i32, i32)>>,
+    tasks: RefCell<Vec<Option<(i32, i32)>>>,
     priority: RefCell<Vec<(i32, i32)>>,
 }
 
@@ -15,10 +14,10 @@ struct TaskManager {
  */
 impl TaskManager {
     fn new(tasks: Vec<Vec<i32>>) -> Self {
-        let mut t = HashMap::new();
+        let mut t = vec![None;100001];
         let mut p = Vec::with_capacity(tasks.len());
         tasks.iter().for_each(|a| {
-            t.insert(a[1],(a[2], a[0]));
+            t[a[1] as usize] = Some((a[2], a[0]));
             p.push((a[2], a[1]));
         });
         p.sort_by(|a, b| {
@@ -47,15 +46,15 @@ impl TaskManager {
             Err(idx) => idx,
         };
         p.insert(pos, (priority, task_id));
-        t.insert(task_id, (priority, user_id));
+        t[task_id as usize] = Some((priority, user_id));
     }
 
     fn edit(&self, task_id: i32, new_priority: i32) {
         let mut t = self.tasks.borrow_mut();
-        if let Some((priority, user_id)) = t.get_mut(&task_id) {
+        if let Some((priority, user_id)) = t[task_id as usize] {
             let mut tp = self.priority.borrow_mut();
             match tp.binary_search_by(|a| {
-                if a.0 == *priority {
+                if a.0 == priority {
                         a.1.cmp(&task_id)
                 } else {
                     a.0.cmp(&priority)
@@ -73,8 +72,8 @@ impl TaskManager {
                         Ok(idx) => idx,
                         Err(idx) => idx,
                     };
-                    *priority = new_priority;
                     tp.insert(pos,(new_priority, task_id));
+                    t[task_id as usize] = Some((new_priority, task_id));
                 },
                 Err(idx) => {},
             };
@@ -84,7 +83,7 @@ impl TaskManager {
     fn rmv(&self, task_id: i32) {
         let mut t= self.tasks.borrow_mut();
         let mut p= self.priority.borrow_mut();
-        t.remove(&task_id);
+        t[task_id as usize] = None;
         p.retain(|p| p.1 != task_id);
     }
 
@@ -92,9 +91,9 @@ impl TaskManager {
         let mut t = self.tasks.borrow_mut();
         let mut p  = self.priority.borrow_mut();
         if let Some(task) = p.pop() {
-            if let Some(&tp) = t.get(&task.1) {
-                t.remove(&task.1);
-                return tp.1;
+            if let Some((priority,user_id)) = t[task.1 as usize] {
+                t[task.1 as usize] = None;
+                return user_id;
             }
         }
         -1
