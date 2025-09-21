@@ -1,12 +1,11 @@
 //https://leetcode.com/problems/design-task-manager/
 
-use std::cell::RefCell;
 use std::collections::{HashMap,BTreeSet};
 
 #[derive(Debug)]
 struct TaskManager {
-    tasks: RefCell<HashMap<i32,(i32, i32)>>,
-    priority: RefCell<BTreeSet<(i32, i32)>>,
+    tasks: HashMap<i32,(i32, i32)>,
+    priority: BTreeSet<(i32, i32)>,
 }
 
 impl TaskManager {
@@ -18,42 +17,34 @@ impl TaskManager {
             p.insert((a[2], a[1]));
         });
         TaskManager {
-            tasks: RefCell::new(t),
-            priority: RefCell::new(p),
+            tasks: t,
+            priority: p,
         }
     }
 
-    fn add(&self, user_id: i32, task_id: i32, priority: i32) {
-        let mut t = self.tasks.borrow_mut();
-        let mut p = self.priority.borrow_mut();
-        p.insert((priority, task_id));
-        t.insert(task_id,(priority, user_id));
+    fn add(&mut self, user_id: i32, task_id: i32, priority: i32) {
+        self.priority.insert((priority, task_id));
+        self.tasks.insert(task_id,(priority, user_id));
     }
 
-    fn edit(&self, task_id: i32, new_priority: i32) {
-        let mut t = self.tasks.borrow_mut();
-        if let Some((priority, user_id)) = t.get_mut(&task_id) {
-            let mut tp = self.priority.borrow_mut();
-            tp.remove(&(*priority, task_id));
-            tp.insert((new_priority, task_id));
+    fn edit(&mut self, task_id: i32, new_priority: i32) {
+        if let Some((priority, user_id)) = self.tasks.get_mut(&task_id) {
+            self.priority.remove(&(*priority, task_id));
+            self.priority.insert((new_priority, task_id));
             *priority = new_priority;
         }
     }
 
-    fn rmv(&self, task_id: i32) {
-        let mut t= self.tasks.borrow_mut();
-        let mut p= self.priority.borrow_mut();
-        if let Some((priority, user_id)) = t.get(&task_id) {
-            p.remove(&(*priority, task_id));
+    fn rmv(&mut self, task_id: i32) {
+        if let Some((priority, user_id)) = self.tasks.get(&task_id) {
+            self.priority.remove(&(*priority, task_id));
         }
     }
 
-    fn exec_top(&self) -> i32 {
-        let mut t = self.tasks.borrow_mut();
-        let mut p  = self.priority.borrow_mut();
+    fn exec_top(&mut self) -> i32 {
         let mut res = None;
-        if let Some((_, tid)) = p.pop_last() {
-            if let Some((_, uid)) = t.get(&tid) {
+        if let Some((_, tid)) = self.priority.pop_last() {
+            if let Some((_, uid)) = self.tasks.get(&tid) {
                 res = Some((tid, *uid));
             }
         }
