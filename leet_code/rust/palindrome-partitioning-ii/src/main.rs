@@ -24,28 +24,18 @@ impl Solution {
     fn generate_palindromic_partitions_bottom_up(
         s: &[char],
     ) -> i32 {
-
-        let mut tabulation = vec![0; s.len()];
+        let mut tabulation: Vec<i32> = (0..s.len() as i32).collect();
         let mut dp = vec![vec![false;s.len()];s.len()];
         for end in 0..s.len() {
             for start in 0..=end {
                 if s[start] == s[end] && ((end-start<=2) || dp[start+1][end-1]) {
                     dp[start][end] = true;
+                    tabulation[end] = match start == 0 {
+                        true => 0,
+                        false => tabulation[end].min(tabulation[start-1] +1 )
+                    };
                 }
             }
-        }
-
-        for end in 0..s.len() {
-            let mut mincut = end;
-            for start in 0..=end {
-                if dp[start][end] {
-                    mincut = match start == 0 {
-                        true => 0,
-                        false => mincut.min( tabulation[start-1] +1 )
-                        
-                }; }
-            }
-            tabulation[end] = mincut;
         }
         tabulation[s.len()-1] as i32
     }
