@@ -57,15 +57,15 @@ impl Solution {
         start: usize,
         s: &[char],
         curr_list: &mut Vec<String>,
-        memo: &mut Vec<Vec<i32>>,
+        memo: &mut Vec<i32>,
         dp: &mut Vec<Vec<i32>>
     ) -> i32 {
         //If the remaining string is palidrome then we return immediately
         if start >= s.len() || Self::is_palindrome( &s, start, s.len()-1, dp ) {
             return 0;
         }
-        if memo[start][s.len()-1] != -1 {
-            return memo[start][s.len()-1];
+        if memo[start] != -1 {
+            return memo[start];
         }
         let mut mincut = i32::MAX;
         for k in start..s.len() {
@@ -85,7 +85,7 @@ impl Solution {
                 dp[start][k] = 0;
             }
         }
-        memo[start][s.len()-1] = mincut;
+        memo[start] = mincut;
         mincut
     }
 
@@ -94,7 +94,7 @@ impl Solution {
         let s = s.chars().collect::<Vec<char>>();
         let mut mincut = i32::MAX;
         let mut curr_list: Vec<String> = Vec::new();
-        let mut memo = vec![vec![-1; s.len()]; s.len()];
+        let mut memo = vec![-1; s.len()];
         let mut dp = vec![vec![-1; s.len()]; s.len()];
         //Self::generate_palindromic_partitions_iterative(&mut mincut, &s, &mut curr_list);
         for i in 0..s.len() {
