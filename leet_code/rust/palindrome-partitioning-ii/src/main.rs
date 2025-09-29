@@ -6,7 +6,7 @@ use std::ops::Range;
 
 impl Solution {
     fn is_palindrome(s: &[char], mut i: usize, mut j: usize, dp: &mut Vec<Vec<i32>>) -> bool {
-        let idx = (i,j);
+        let idx = (i, j);
         if dp[idx.0][idx.1] == -1 {
             dp[idx.0][idx.1] = 1;
             while i < j {
@@ -21,47 +21,44 @@ impl Solution {
         return dp[idx.0][idx.1] == 1;
     }
 
-    fn generate_palindromic_partitions_iterative(
-        partitions: &mut usize,
+    fn generate_palindromic_partitions_bottom_up(
         s: &[char],
-        curr_list: &mut Vec<String>,
-        dp: &mut Vec<Vec<i32>>
-    ) {
-        let mut stack: Vec<(usize, Range<usize>)> = Vec::new();
-        stack.push((0, 0..s.len()));
-        while let Some(mut curr_ptr) = stack.pop() {
-            let start = curr_ptr.0;
-            match curr_ptr.1.next() {
-                Some(k) => {
-                    if Self::is_palindrome(s, start, k, dp) {
-                        dp[start][k] = 1;
-                        curr_list.push(String::from_iter(&s[start..(k + 1)]));
-                        stack.push(curr_ptr);
-                        stack.push((k + 1, k + 1..s.len()));
-                    } else {
-                        stack.push(curr_ptr);
-                    }
+    ) -> i32 {
+
+        let mut tabulation = vec![0; s.len()];
+        let mut dp = vec![vec![false;s.len()];s.len()];
+        for end in 0..s.len() {
+            for start in 0..=end {
+                if s[start] == s[end] && ((end-start<=2) || dp[start+1][end-1]) {
+                    dp[start][end] = true;
                 }
-                None => {
-                    if start >= s.len() {
-                        *partitions = curr_list.len().min(*partitions);
-                    }
-                    curr_list.pop();
-                }
-            };
+            }
         }
+
+        for end in 0..s.len() {
+            let mut mincut = end;
+            for start in 0..=end {
+                if dp[start][end] {
+                    mincut = match start == 0 {
+                        true => 0,
+                        false => mincut.min( tabulation[start-1] +1 )
+                        
+                }; }
+            }
+            tabulation[end] = mincut;
+        }
+        tabulation[s.len()-1] as i32
     }
 
-    fn generate_palindromic_partitions(
-        partitions: &mut i32,
+    fn generate_palindromic_partitions_top_down(
         start: usize,
         s: &[char],
         curr_list: &mut Vec<String>,
         memo: &mut Vec<i32>,
-        dp: &mut Vec<Vec<i32>>
+        dp: &mut Vec<Vec<i32>>,
     ) -> i32 {
         //If the remaining string is palidrome then we return immediately
-        if start >= s.len() || Self::is_palindrome( &s, start, s.len()-1, dp ) {
+        if start >= s.len() || Self::is_palindrome(&s, start, s.len() - 1, dp) {
             return 0;
         }
         if memo[start] != -1 {
@@ -69,17 +66,12 @@ impl Solution {
         }
         let mut mincut = i32::MAX;
         for k in start..s.len() {
-            if s[start] == s[k] && ( k-start < 2 || Self::is_palindrome( &s, start+1, k-1, dp )) {
+            if s[start] == s[k] && (k - start < 2 || Self::is_palindrome(&s, start + 1, k - 1, dp))
+            {
                 dp[start][k] = 1;
                 curr_list.push(String::from_iter(&s[start..(k + 1)]));
-                mincut = mincut.min( 1 + Self::generate_palindromic_partitions(
-                    partitions,
-                    k + 1,
-                    s,
-                    curr_list,
-                    memo,
-                    dp
-                ));
+                mincut = mincut
+                    .min(1 + Self::generate_palindromic_partitions_top_down(k + 1, s, curr_list, memo, dp));
                 curr_list.pop();
             } else {
                 dp[start][k] = 0;
@@ -92,7 +84,7 @@ impl Solution {
     pub fn min_cut(s: String) -> i32 {
         //Generate palindromic_partitions
         let s = s.chars().collect::<Vec<char>>();
-        let mut mincut = i32::MAX;
+        /*
         let mut curr_list: Vec<String> = Vec::new();
         let mut memo = vec![-1; s.len()];
         let mut dp = vec![vec![-1; s.len()]; s.len()];
@@ -100,24 +92,17 @@ impl Solution {
         for i in 0..s.len() {
             dp[i][i] = 1;
             if i < s.len() - 1 {
-                if s[i] == s[i+1] {
-                    dp[i][i+1] = 1;
+                if s[i] == s[i + 1] {
+                    dp[i][i + 1] = 1;
                 }
             }
         }
-        match Self::generate_palindromic_partitions(
-            &mut mincut,
-            0,
-            &s,
-            &mut curr_list,
-            &mut memo,
-            &mut dp
-        ) {
+        match Self::generate_palindromic_partitions_bottom_up(0, &s, &mut curr_list, &mut memo, &mut dp) {
             i32::MAX => 0,
-            num => {
-                num
-            },
+            num => num,
         }
+        */
+        Self::generate_palindromic_partitions_bottom_up(&s)
     }
 }
 
