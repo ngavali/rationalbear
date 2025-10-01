@@ -171,6 +171,7 @@ impl Solution {
         let s2 = s2.as_bytes();
         let mut dp: Vec<Vec<i32>> = vec![vec![0; 1 + s2.len()]; 2];
         let mut total = 0;
+        s2.iter().for_each(|&c| total += c as i32);
         for i in 0..s1.len() {
             total += s1[i] as i32;
             for j in 0..s2.len() {
@@ -178,9 +179,6 @@ impl Solution {
                     true => dp[0][j] + s1[i] as i32,
                     false => dp[0][j + 1].max(dp[1][j]),
                 };
-                if i == 0 {
-                    total += s2[j] as i32;
-                }
             }
             dp[0] = dp[1].clone();
         }
