@@ -21,25 +21,6 @@ impl Solution {
         return dp[idx.0][idx.1] == 1;
     }
 
-    fn generate_palindromic_partitions_bottom_up(
-        s: &[char],
-    ) -> i32 {
-        let mut tabulation: Vec<i32> = (0..s.len() as i32).collect();
-        let mut dp = vec![vec![false;s.len()];s.len()];
-        for end in 0..s.len() {
-            for start in 0..=end {
-                if s[start] == s[end] && ((end-start<=2) || dp[start+1][end-1]) {
-                    dp[start][end] = true;
-                    tabulation[end] = match start == 0 {
-                        true => 0,
-                        false => tabulation[end].min(tabulation[start-1] +1 )
-                    };
-                }
-            }
-        }
-        tabulation[s.len()-1] as i32
-    }
-
     fn generate_palindromic_partitions_top_down(
         start: usize,
         s: &[char],
@@ -60,8 +41,15 @@ impl Solution {
             {
                 dp[start][k] = 1;
                 curr_list.push(String::from_iter(&s[start..(k + 1)]));
-                mincut = mincut
-                    .min(1 + Self::generate_palindromic_partitions_top_down(k + 1, s, curr_list, memo, dp));
+                mincut = mincut.min(
+                    1 + Self::generate_palindromic_partitions_top_down(
+                        k + 1,
+                        s,
+                        curr_list,
+                        memo,
+                        dp,
+                    ),
+                );
                 curr_list.pop();
             } else {
                 dp[start][k] = 0;
@@ -71,8 +59,89 @@ impl Solution {
         mincut
     }
 
+    fn generate_palindromic_partitions_bottom_up(s: &[char]) -> i32 {
+        let mut tabulation: Vec<i32> = (0..s.len() as i32).collect();
+        let mut dp = vec![vec![false; s.len()]; s.len()];
+        for end in 0..s.len() {
+            for start in 0..=end {
+                println!("  ----{start:3}, {end:3}----");
+                if s[start] == s[end] && ((end - start <= 2) || dp[start + 1][end - 1]) {
+                    println!("  Is Palindrome ----{start:3}, {end:3}----");
+                    dp[start][end] = true;
+                    tabulation[end] = match start == 0 {
+                        true => {
+                            println!(
+                                "      tab before {end:3} -> {} start=0 -> {}",
+                                tabulation[end], 0
+                            );
+                            0
+                        }
+                        false => {
+                            println!(
+                                "      tab before {end:3} -> {} tab[{}] -> {} +1 {}",
+                                tabulation[end],
+                                start - 1,
+                                tabulation[start - 1],
+                                tabulation[start - 1] + 1,
+                            );
+                            tabulation[end].min(tabulation[start - 1] + 1)
+                        }
+                    };
+                    println!("      tab after  {end:3} -> {}", tabulation[end]);
+                }
+            }
+        }
+        tabulation[s.len() - 1] as i32
+    }
+
+    fn min_cuts(s: &[char], mut start: usize, mut end: usize, tabulation: &mut Vec<i32>) -> i32 {
+        println!(" ---- min cuts ----");
+        while end < s.len() && s[start] == s[end] {
+            println!("  Is Palindrome ----{start:3}, {end:3}----");
+            tabulation[end] = tabulation[end].min(match start {
+                0 => {
+                    println!(
+                        "      tab before {end:3} -> {} start=0 -> {}",
+                        tabulation[end], 0
+                    );
+                    0
+                }
+                _ => {
+                    println!(
+                        "      tab before {end:3} -> {} tab[{}] -> {} +1 {}",
+                        tabulation[end],
+                        start - 1,
+                        tabulation[start - 1],
+                        tabulation[start - 1] + 1,
+                    );
+                    tabulation[start - 1] + 1
+                }
+            });
+                    println!("      tab after  {end:3} -> {}", tabulation[end]);
+            if start > 0 {
+                start -= 1;
+            } else {
+                break;
+            }
+
+            end += 1;
+        }
+        0
+    }
+
+    fn expand_from_center_with_tabulation(s: &[char]) -> i32 {
+        let mut tabulation: Vec<i32> = (0..s.len() as i32).collect();
+        for mid in 0..s.len() {
+            println!(" ----{mid}----");
+            Self::min_cuts(s, mid, mid, &mut tabulation);
+            Self::min_cuts(s, mid, mid + 1, &mut tabulation);
+        }
+        tabulation[s.len() - 1]
+    }
+
     pub fn min_cut(s: String) -> i32 {
         //Generate palindromic_partitions
+        println!("> {s}");
         let s = s.chars().collect::<Vec<char>>();
         /*
         let mut curr_list: Vec<String> = Vec::new();
@@ -92,7 +161,8 @@ impl Solution {
             num => num,
         }
         */
-        Self::generate_palindromic_partitions_bottom_up(&s)
+        //Self::generate_palindromic_partitions_bottom_up(&s)
+        Self::expand_from_center_with_tabulation(&s)
     }
 }
 
