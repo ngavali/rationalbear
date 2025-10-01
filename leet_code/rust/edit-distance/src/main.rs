@@ -7,20 +7,18 @@ impl Solution {
         let word1: Vec<u8> = word1.into_bytes();
         let word2: Vec<u8> = word2.into_bytes();
         let (m, n) = (word1.len(), word2.len());
-        let mut dp: Vec<Vec<i32>> = vec![vec![0; word2.len() + 1]; word1.len() + 1];
-        for i in 0..=word1.len() {
-            dp[i][0] = i as i32;
-        }
+        let mut prev = vec![0; n + 1];
+        let mut next = vec![0; n + 1];
         for j in 0..=word2.len() {
-            dp[0][j] = j as i32;
+            prev[j] = j;
         }
-        for i in 0..word1.len() {
-            for j in 0..word2.len() {
-                if word1[i] == word2[j] {
-                    //If both characters are same its a NoOP
-                    //We move forward
-                    dp[i + 1][j + 1] = dp[i][j];
-                } else {
+        for i in 1..=m {
+            next[0] = i;
+            for j in 1..=n {
+                //If both characters are same its a NoOP
+                //We move forward
+                next[j] = prev[j - 1];
+                if word1[i - 1] != word2[j - 1] {
                     //If they don't match then
                     //We either
                     //  Insert word2 character, makes j move forward
@@ -28,11 +26,12 @@ impl Solution {
                     //      makes them i & j both move forward
                     //  Delete character from word1,
                     //      makes i move forward
-                    dp[i + 1][j + 1] = 1 + dp[i + 1][j].min((dp[i][j]).min(dp[i][j + 1]));
+                    next[j] = 1 + next[j - 1].min(next[j].min(prev[j]));
                 }
             }
+            std::mem::swap(&mut next, &mut prev);
         }
-        dp[m][n]
+        prev[n] as i32
     }
 }
 
