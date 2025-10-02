@@ -4,9 +4,9 @@ struct Solution;
 
 impl Solution {
     fn num_char_change_to_make_palindrome(s: &[u8], start: usize, end: usize, dp: &mut Vec<Vec<i32>>) -> i32 {
-        if dp[start][end-1] == -1 {
+        if dp[start][end] == -1 {
             let mut i = start;
-            let mut j = end - 1;
+            let mut j = end ;
             let mut c = 0;
             while i < j {
                 if s[i] != s[j] {
@@ -15,47 +15,35 @@ impl Solution {
                 i += 1;
                 j -= 1;
             }
-            dp[start][end-1] = c;
+            dp[start][end] = c;
         }
-        dp[start][end-1]
+        dp[start][end]
     }
 
     fn dfs(
         s: &[u8],
         i: usize,
         k: i32,
-        min_change: &mut i32,
         dp: &mut Vec<Vec<i32>>,
-        memo: &mut Vec<Vec<i32>>,
-        c: i32,
-    ) -> i32 {
-        let mut mc = i32::MAX;
-        if memo[i][k as usize - 1] != i32::MAX {
-            return memo[i][k as usize - 1] as i32;
+        memo: &mut Vec<Vec<usize>>,
+    ) -> usize {
+        let mut mc = s.len();
+        if memo[i][k as usize - 1] != s.len() {
+            return memo[i][k as usize - 1];
         }
         if k == 1 {
-            return Self::num_char_change_to_make_palindrome(s, i, s.len(), dp);
+            return Self::num_char_change_to_make_palindrome(s, i, s.len()-1, dp) as usize;
         }
         /*println!("-- MEMO --");
         for r in memo.iter() {
             println!("{r:?}");
         }*/
 
-        //println!("      Range: {} : {} -> {}",i,i+1,s.len());
         for j in i + 1..s.len() {
-            let sub_str = String::from_utf8(s[i..j].to_vec()).unwrap();
-            //println!("      B-> {i} {k}");
-            //println!("      At Range: {} : {} -> {} {sub_str}",i,j,s.len());
-            /*if dp[i][j - 1] == -1 {
-                dp[i][j - 1] = Self::num_char_change_to_make_palindrome(&sub_str.as_bytes());
-            }*/
-            let tc = Self::num_char_change_to_make_palindrome(s, i, j, dp);
-            //let tc = c + dp[i][j - 1];
-            let r = Self::dfs(s, j, k - 1, min_change, dp, memo, c + tc);
-            //println!("{mc} {tc} {r}");
-            if r != i32::MAX {
-                mc = mc.min(tc + r);
-            }
+            mc = mc.min(
+                Self::num_char_change_to_make_palindrome(s, i, j-1, dp) as usize
+                + Self::dfs(s, j, k - 1, dp, memo)
+            );
         }
         //println!("{i} {k} -> {mc}");
         memo[i][k as usize - 1] = mc;
@@ -69,17 +57,15 @@ impl Solution {
         //println!("--- {s} --- {k} ---");
         let mut min_change = s.len() as i32;
         let mut dp = vec![vec![-1; s.len()]; s.len()];
-        let mut memo = vec![vec![i32::MAX; k as usize]; s.len()];
+        let mut memo = vec![vec![s.len(); k as usize]; s.len()];
 
         let mc = Self::dfs(
             &s.as_bytes(),
             0,
             k,
-            &mut min_change,
             &mut dp,
             &mut memo,
-            0,
-        );
+        ) as i32;
         /*println!("mc -> {mc}");
         println!("-- MEMO --");
         for r in memo.iter() {
