@@ -25,39 +25,29 @@ impl Solution {
         i: usize,
         k: i32,
         dp: &mut Vec<Vec<i32>>,
-        memo: &mut Vec<Vec<usize>>,
-    ) -> usize {
-        let mut mc = s.len();
-        if memo[i][k as usize - 1] != s.len() {
+        memo: &mut Vec<Vec<i32>>,
+    ) -> i32 {
+        let mut mc = s.len() as i32;
+        if memo[i][k as usize - 1] != 200 {
             return memo[i][k as usize - 1];
         }
         if k == 1 {
-            return Self::num_char_change_to_make_palindrome(s, i, s.len()-1, dp) as usize;
+            return Self::num_char_change_to_make_palindrome(s, i, s.len()-1, dp);
         }
-        /*println!("-- MEMO --");
-        for r in memo.iter() {
-            println!("{r:?}");
-        }*/
-
         for j in i + 1..s.len() {
             mc = mc.min(
-                Self::num_char_change_to_make_palindrome(s, i, j-1, dp) as usize
+                Self::num_char_change_to_make_palindrome(s, i, j-1, dp)
                 + Self::dfs(s, j, k - 1, dp, memo)
             );
         }
-        //println!("{i} {k} -> {mc}");
         memo[i][k as usize - 1] = mc;
-        /*println!("-- MEMO --");
-        for r in memo.iter() {
-            println!("{r:?}");
-        }*/
         mc
     }
     pub fn palindrome_partition(s: String, k: i32) -> i32 {
         //println!("--- {s} --- {k} ---");
-        let mut min_change = s.len() as i32;
         let mut dp = vec![vec![-1; s.len()]; s.len()];
-        let mut memo = vec![vec![s.len(); k as usize]; s.len()];
+        //Constraints 1 <= k <= s.length <= 100
+        let mut memo = vec![vec![200; k as usize]; s.len()];
 
         let mc = Self::dfs(
             &s.as_bytes(),
