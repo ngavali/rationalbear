@@ -3,27 +3,27 @@
 struct Solution;
 
 impl Solution {
-    fn num_char_change_to_make_palindrome(s: &[u8]) -> i32 {
-        println!(" {:?}", String::from_utf8(s.to_vec()));
-        let mut i = 0;
-        let mut j = s.len() - 1;
-        let mut c = 0;
-        while i < j {
-            //println!("{s:?} ({i},{j}) -> {c}");
-            if s[i] != s[j] {
-                c += 1;
+    fn num_char_change_to_make_palindrome(s: &[u8], start: usize, end: usize, dp: &mut Vec<Vec<i32>>) -> i32 {
+        if dp[start][end-1] == -1 {
+            let mut i = start;
+            let mut j = end - 1;
+            let mut c = 0;
+            while i < j {
+                if s[i] != s[j] {
+                    c += 1;
+                }
+                i += 1;
+                j -= 1;
             }
-            i += 1;
-            j -= 1;
+            dp[start][end-1] = c;
         }
-        c
+        dp[start][end-1]
     }
 
     fn dfs(
         s: &[u8],
         i: usize,
         k: i32,
-        curr_list: &mut Vec<String>,
         min_change: &mut i32,
         dp: &mut Vec<Vec<i32>>,
         memo: &mut Vec<Vec<i32>>,
@@ -34,23 +34,7 @@ impl Solution {
             return memo[i][k as usize - 1] as i32;
         }
         if k == 1 {
-            let sub_str: String = String::from_utf8(s[i..s.len()].to_vec()).unwrap();
-            return Self::num_char_change_to_make_palindrome(&sub_str.as_bytes());
-        }
-        if k == 0 && i < s.len() {
-            return mc;
-        }
-        if i >= s.len() && k == 0 {
-            /*if c == 0 {
-                println!(" B -> i={i}, k={k}, c={c}");
-                println!(" Zero >>> {curr_list:?}");
-            }*/
-            //*min_change = c.min(*min_change);
-            //println!(" >>> {curr_list:?} {min_change}");
-            return 0;
-        }
-        if i >= s.len() {
-            return i32::MAX;
+            return Self::num_char_change_to_make_palindrome(s, i, s.len(), dp);
         }
         /*println!("-- MEMO --");
         for r in memo.iter() {
@@ -65,15 +49,13 @@ impl Solution {
             /*if dp[i][j - 1] == -1 {
                 dp[i][j - 1] = Self::num_char_change_to_make_palindrome(&sub_str.as_bytes());
             }*/
-            let tc = Self::num_char_change_to_make_palindrome(&sub_str.as_bytes());
-            curr_list.push(sub_str);
+            let tc = Self::num_char_change_to_make_palindrome(s, i, j, dp);
             //let tc = c + dp[i][j - 1];
-            let r = Self::dfs(s, j, k - 1, curr_list, min_change, dp, memo, c + tc);
+            let r = Self::dfs(s, j, k - 1, min_change, dp, memo, c + tc);
             //println!("{mc} {tc} {r}");
             if r != i32::MAX {
                 mc = mc.min(tc + r);
             }
-            curr_list.pop();
         }
         //println!("{i} {k} -> {mc}");
         memo[i][k as usize - 1] = mc;
@@ -85,7 +67,6 @@ impl Solution {
     }
     pub fn palindrome_partition(s: String, k: i32) -> i32 {
         //println!("--- {s} --- {k} ---");
-        let mut curr_list: Vec<String> = Vec::new();
         let mut min_change = s.len() as i32;
         let mut dp = vec![vec![-1; s.len()]; s.len()];
         let mut memo = vec![vec![i32::MAX; k as usize]; s.len()];
@@ -94,7 +75,6 @@ impl Solution {
             &s.as_bytes(),
             0,
             k,
-            &mut curr_list,
             &mut min_change,
             &mut dp,
             &mut memo,
