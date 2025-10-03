@@ -27,15 +27,14 @@ impl Solution {
     pub fn min_time_to_reach(move_time: Vec<Vec<i32>>) -> i32 {
         let m = move_time.len();
         let n = move_time[0].len();
-        let mut pq = BinaryHeap::<Node>::with_capacity(m*n);
-        pq.push(Node {
-            ts: 0,
-            x: 0,
-            y: 0,
-        });
+        let mut pq = BinaryHeap::<Node>::with_capacity(m * n);
+        pq.push(Node { ts: 0, x: 0, y: 0 });
         let mut time = vec![vec![u32::MAX; n]; m];
         time[0][0] = 0;
-        while let Some(node) = pq.pop() && node.x != m && node.y != n {
+        while let Some(node) = pq.pop()
+            && node.x != m
+            && node.y != n
+        {
             for (n_x, n_y) in vec![
                 (node.x, node.y + 1),
                 (node.x + 1, node.y),
@@ -44,6 +43,8 @@ impl Solution {
             ] {
                 if n_x < m && n_y < n {
                     let min_wait_time = 1 + (move_time[n_x][n_y] as u32).max(time[node.x][node.y]);
+                    //Revisiting is a problem, we can reach a node from a mutliple paths
+                    //Accept the shortest path
                     if time[n_x][n_y] > min_wait_time {
                         time[n_x][n_y] = min_wait_time;
                         pq.push(Node {
@@ -69,7 +70,7 @@ mod test {
 
     fn testcases() -> Vec<(Vec<Vec<i32>>, i32)> {
         vec![
-            (vec![vec![56,93],vec![3,38]], 39),
+            (vec![vec![56, 93], vec![3, 38]], 39),
             (
                 vec![vec![94, 79, 62, 27, 69, 84], vec![6, 32, 11, 82, 42, 30]],
                 72,
