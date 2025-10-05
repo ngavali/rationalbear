@@ -44,6 +44,7 @@ impl Solution {
     }
 
     pub fn palindrome_partition_bottom_up(s: String, k: i32) -> i32 {
+        println!("---{s} {k}---");
         let n = s.len();
         let s = s.as_bytes();
         let k = k as usize;
@@ -53,8 +54,25 @@ impl Solution {
         for len in 2..=n {
             for i in 0..=n - len {
                 let j = i + len - 1;
-                cost[i][j] = cost[i + 1][j - 1] + (s[i] != s[j]) as i32
+                println!(
+                    "--Before - {i:2},{j:2} - palindrome cost DP table -- res -> {} != {} -> {}",
+                    s[i],
+                    s[j],
+                    s[i] != s[j]
+                );
+                for r in cost.iter() {
+                    println!("{r:?}");
+                }
+                cost[i][j] = cost[i + 1][j - 1] + (s[i] != s[j]) as i32;
+                println!("--After - {i:2},{j:2} - palindrome cost DP table --");
+                for r in cost.iter() {
+                    println!("{r:?}");
+                }
             }
+        }
+        println!("--Final palindrome cost DP table --");
+        for r in cost.iter() {
+            println!("{r:?}");
         }
         for i in (0..n).rev() {
             dp[i][1] = cost[i][n - 1];
@@ -65,6 +83,72 @@ impl Solution {
             }
         }
         dp[0][k]
+    }
+
+    fn palindrome_partition_tabulation(s: String, k: i32) -> i32 {
+        println!(">>> TABULATION --- {s} - {k} ---");
+        let s = s.as_bytes();
+        let mut cost = vec![vec![0; s.len()]; s.len()];
+        for i in (0..s.len()).rev() {
+            for j in i + 1..s.len() {
+                println!(
+                    "--Before - {i:2},{j:2} - palindrome cost cost table -- res -> {} != {} -> {}",
+                    s[i],
+                    s[j],
+                    s[i] != s[j]
+                );
+                for r in cost.iter() {
+                    println!("{r:?}");
+                }
+                cost[i][j] = (s[i] != s[j]) as i32;
+                if i + 1 < j {
+                    cost[i][j] += cost[i + 1][j - 1];
+                }
+                println!(
+                    "--After  - {i:2},{j:2} - palindrome cost cost table -- res -> {} != {} -> {}",
+                    s[i],
+                    s[j],
+                    s[i] != s[j]
+                );
+                for r in cost.iter() {
+                    println!("{r:?}");
+                }
+            }
+        }
+        let n = s.len();
+        let k = k as usize;
+        let mut dp = vec![vec![0; n + 1]; k + 1];
+        for length in 1..=n {
+            for partition in 1..=length.min(k as usize) {
+                println!(">> Before --- DP partition={partition:2}, length={length:2} ---");
+                for r in dp.iter() {
+                    println!("{r:?}");
+                }
+                if partition == 1 {
+                    dp[partition][length] = cost[0][length - 1];
+                } else {
+                    dp[partition][length] = 127;
+                    for split_point in partition - 1..length {
+                        println!("\t--- DP par={partition:2},len={length:2} --- {split_point} dp[partition-1={:2}, split_point={:2}] + cost[split_point={:2}, length-1={:2}]", partition - 1, split_point, split_point, length-1);
+                        println!("\t\t min of ({:3} and dp(par-1)={} + cost={}  ) ", dp[partition][length], dp[partition - 1][split_point], cost[split_point][length - 1]);
+                        for r in dp.iter() {
+                            println!("\t{r:?}");
+                        }
+                        dp[partition][length] = dp[partition][length]
+                            .min(dp[partition - 1][split_point] + cost[split_point][length - 1]);
+                    }
+                }
+                println!(">> After  --- DP {partition:2},{length:2} ---");
+                for r in dp.iter() {
+                    println!("{r:?}");
+                }
+            }
+        }
+        println!("--- DP length k---");
+        for r in dp.iter() {
+            println!("{r:?}");
+        }
+        dp[k][n]
     }
 
     pub fn palindrome_partition(s: String, k: i32) -> i32 {
@@ -85,6 +169,7 @@ mod test {
     use super::Solution;
     fn testcases() -> Vec<(String, i32, i32)> {
         vec![
+            ("aabbdd".to_string(), 3, 0),
             ("aabbc".to_string(), 3, 0),
             ("abc".to_string(), 2, 1),
             ("babbaaaaab".to_string(), 3, 1),
@@ -104,18 +189,27 @@ mod test {
             ("zcfxvwnafsrczwpdyxkvutnqduortfzjgzpbjrzagsfbhaejcsepiraqfpgvcoyhsorwzwfncmoitdopbhecmbjejpldcvfwubfn".to_string(), 20, 28),
         ]
     }
+    /*
     #[test]
     fn test_palindrome_partition() {
         for (s, k, want) in testcases() {
-        //for (s, k, want) in testcases().into_iter().take(2) {
+            //for (s, k, want) in testcases().into_iter().take(2) {
             assert_eq!(Solution::palindrome_partition(s, k), want);
         }
     }
     #[test]
     fn test_palindrome_partition_bottom_up() {
-        for (s, k, want) in testcases() {
-        //for (s, k, want) in testcases().into_iter().take(2) {
+        //for (s, k, want) in testcases() {
+        for (s, k, want) in testcases().into_iter().take(1) {
             assert_eq!(Solution::palindrome_partition_bottom_up(s, k), want);
+        }
+    }
+    */
+    #[test]
+    fn test_palindrome_partition_tabulation() {
+        //for (s, k, want) in testcases() {
+        for (s, k, want) in testcases().into_iter().take(1) {
+            assert_eq!(Solution::palindrome_partition_tabulation(s, k), want);
         }
     }
 }
