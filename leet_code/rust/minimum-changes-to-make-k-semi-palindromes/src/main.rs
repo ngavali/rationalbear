@@ -2,8 +2,6 @@
 
 struct Solution;
 
-use std::collections::HashMap;
-
 impl Solution {
     pub fn changes_to_make_palidrome(s: &[char], start: usize, end: usize) -> i32 {
         let (mut i, mut j, mut c) = (start, end, 0 as i32);
@@ -46,28 +44,17 @@ impl Solution {
         final_changes
     }
 
-    fn make_semi_palindrome(
-        s: &[char],
-        start: usize,
-        end: usize,
-        factor_map: &Vec<Vec<usize>>,
-    ) -> i32 {
-        let ss = String::from_iter(s);
-        Self::generate_semi_palindromes(&s, start, end, factor_map)
-    }
-
     pub fn minimum_changes(s: String, k: i32) -> i32 {
         //Constraints 1 <= k <= s.length <= 100
-        println!("---{s}---");
         let k = k as usize;
         let s: Vec<char> = s.chars().collect();
 
         let mut factor_map = vec![vec![]; s.len()];
         for num in 2..=s.len() {
-            let mut i = num;
-            while i + num <= s.len() {
+            let mut i = num*2;
+            while i <= s.len() {
+                factor_map[i-1].push(num);
                 i += num;
-                factor_map[i - 1].push(num);
             }
         }
 
@@ -75,15 +62,16 @@ impl Solution {
         for start in (0..s.len()).rev() {
             for end in start + 1..s.len() {
                 palidrome_cost[start][end] =
-                    Self::make_semi_palindrome(&s, start, end, &mut factor_map);
+                    Self::generate_semi_palindromes(&s, start, end, &mut factor_map);
             }
         }
-
-        let mut dp = vec![vec![127; s.len() + 1]; k + 1];
+        //2 <= s.length <= 200
+        //So 200/2=100 max changes
+        let mut dp = vec![vec![100; s.len() + 1]; k + 1];
         dp[0][0] = 0;
 
         for part in 1..=k {
-            for i in (2*part..=s.len()) {
+            for i in 2*part..=s.len() {
                 for j in 0..i-1 {
                 dp[part][i] = dp[part][i].min(dp[part - 1][j] + palidrome_cost[j][i - 1]);
                 }
@@ -92,7 +80,6 @@ impl Solution {
         dp[k][s.len()]
     }
 }
-
 /*
 use std::collections::HashMap;
 impl Solution {
