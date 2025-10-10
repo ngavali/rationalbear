@@ -76,11 +76,24 @@ impl Solution {
         }
         for i in (0..n).rev() {
             dp[i][1] = cost[i][n - 1];
+            println!(" Start ---- DP --- ");
+            for r in dp.iter() {
+                println!("{r:?}");
+            }
+
             for part in 2..=k {
                 for j in i..n {
                     dp[i][part] = dp[i][part].min(cost[i][j] + dp[j + 1][part - 1]);
+                    println!(" \t\t---- DP --- Current= i={:2}, part={:2} -> {}     previous part j+1 {:2}, part-1={:2} -> {}", i, part, dp[i][part] , j+1, part-1, dp[j+1][part-1]);
+                    for r in dp.iter() {
+                        println!("\t\t{r:?}");
+                    }
                 }
             }
+        }
+        println!(" ---- DP --- ");
+        for r in dp.iter() {
+            println!("{r:?}");
         }
         dp[0][k]
     }
@@ -101,7 +114,7 @@ impl Solution {
                     println!("{r:?}");
                 }
                 cost[i][j] = (s[i] != s[j]) as i32;
-                if i + 1 < j {
+                if j - i > 2 {
                     cost[i][j] += cost[i + 1][j - 1];
                 }
                 println!(
@@ -130,7 +143,12 @@ impl Solution {
                     dp[partition][length] = 127;
                     for split_point in partition - 1..length {
                         println!("\t--- DP par={partition:2},len={length:2} --- {split_point} dp[partition-1={:2}, split_point={:2}] + cost[split_point={:2}, length-1={:2}]", partition - 1, split_point, split_point, length-1);
-                        println!("\t\t min of ({:3} and dp(par-1)={} + cost={}  ) ", dp[partition][length], dp[partition - 1][split_point], cost[split_point][length - 1]);
+                        println!(
+                            "\t\t min of ({:3} and dp(par-1)={} + cost={}  ) ",
+                            dp[partition][length],
+                            dp[partition - 1][split_point],
+                            cost[split_point][length - 1]
+                        );
                         for r in dp.iter() {
                             println!("\t{r:?}");
                         }
@@ -197,6 +215,7 @@ mod test {
             assert_eq!(Solution::palindrome_partition(s, k), want);
         }
     }
+    */
     #[test]
     fn test_palindrome_partition_bottom_up() {
         //for (s, k, want) in testcases() {
@@ -204,7 +223,7 @@ mod test {
             assert_eq!(Solution::palindrome_partition_bottom_up(s, k), want);
         }
     }
-    */
+    /*
     #[test]
     fn test_palindrome_partition_tabulation() {
         //for (s, k, want) in testcases() {
@@ -212,4 +231,5 @@ mod test {
             assert_eq!(Solution::palindrome_partition_tabulation(s, k), want);
         }
     }
+    */
 }
