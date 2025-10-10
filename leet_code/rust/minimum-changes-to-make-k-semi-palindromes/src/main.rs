@@ -3,112 +3,66 @@
 struct Solution;
 
 use std::collections::HashMap;
+
 impl Solution {
-    fn changes_to_make_palindrome(s: &[char]) -> i32 {
-        if s.len() == 1 {
-            return 0;
-        }
-        let mut changes = 0;
-        let mut i = 0;
-        let mut j = s.len() - 1;
+    pub fn changes_to_make_palidrome(s: &[char], start: usize, end: usize) -> i32 {
+        let (mut i, mut j, mut c) = (start, end, 0 as i32);
         while i < j {
             if s[i] != s[j] {
-                changes += 1;
+                c += 1;
             }
             i += 1;
             j -= 1;
         }
-        changes
+        c
     }
 
-    fn generate_semi_palindromes(s: &[char], l: usize, factor_map: &Vec<Vec<usize>>) -> i32 {
-        let mut final_changes = s.len() as i32;
-        for &factor in factor_map[l - 1].iter() {
-            let mut groups = Vec::new();
-            let mut c = 0;
-            for d in 1..=factor {
-                let mut group = Vec::new();
-                let mut i = d;
-                while i <= l {
-                    group.push(s[i - 1]);
-                    i += factor;
+    fn generate_semi_palindromes(
+        s: &[char],
+        start: usize,
+        end: usize,
+        factor_map: &Vec<Vec<usize>>,
+    ) -> i32 {
+        let l = end - start;
+        //1 is always a factor
+        let mut final_changes = Self::changes_to_make_palidrome(s, start, end);
+        for &factor in factor_map[l].iter() {
+            if final_changes != 0 {
+                let mut c = 0;
+                for d in 1..=factor {
+                    let mut lf = start + d - 1;
+                    let mut rt = start + d + (l - factor);
+                    while lf < rt {
+                        if s[lf] != s[rt] {
+                            c += 1;
+                        }
+                        lf += factor;
+                        rt -= factor;
+                    }
                 }
-                c += Self::changes_to_make_palindrome(&group);
-                groups.push(group);
+                final_changes = final_changes.min(c);
             }
-            final_changes = final_changes.min(c);
         }
         final_changes
     }
 
     fn make_semi_palindrome(
         s: &[char],
-        changes_map: &mut HashMap<String, i32>,
+        start: usize,
+        end: usize,
         factor_map: &Vec<Vec<usize>>,
     ) -> i32 {
         let ss = String::from_iter(s);
-        if s.len() == 1 {
-            return 0;
-        }
-        if s.len() == 2 {
-            return Self::changes_to_make_palindrome(s);
-        }
-        let final_changes = match changes_map.get(&ss) {
-            Some(&c) => c,
-            None => {
-                //Find factors
-                let str_length = s.len();
-                let c = Self::generate_semi_palindromes(&s, s.len(), factor_map);
-                changes_map.insert(ss, c);
-                c
-            }
-        };
-        final_changes
-    }
-
-    fn generate_palindromic_partitions(
-        start: usize,
-        s: &[char],
-        part: usize,
-        changes_map: &mut HashMap<String, i32>,
-        factor_map: &Vec<Vec<usize>>,
-        memo: &mut Vec<Vec<i32>>,
-    ) -> i32 {
-        if memo[start][part] != 300 as i32 {
-            return memo[start][part];
-        }
-        if part == 1 {
-            let this_change = Self::make_semi_palindrome(&s[start..], changes_map, factor_map);
-            return this_change;
-        }
-        let mut min_change = s.len() as i32;
-        for k in start + 1..s.len() - 2 {
-            let this_change = Self::make_semi_palindrome(&s[start..=k], changes_map, factor_map);
-            min_change = min_change.min(
-                this_change
-                    + Self::generate_palindromic_partitions(
-                        k + 1,
-                        s,
-                        part - 1,
-                        changes_map,
-                        factor_map,
-                        memo,
-                    ),
-            );
-        }
-        memo[start][part] = min_change;
-        min_change
+        Self::generate_semi_palindromes(&s, start, end, factor_map)
     }
 
     pub fn minimum_changes(s: String, k: i32) -> i32 {
-        //Generate palindromic_partitions
-        let s = s.chars().collect::<Vec<char>>();
-        let mut curr_list: Vec<String> = Vec::new();
-        let mut changes_map = HashMap::new();
-        let mut memo = vec![vec![300; k as usize + 1]; s.len() + 1];
-        //let mut factor_map: HashMap<usize,Vec<usize>> = HashMap::new();
+        //Constraints 1 <= k <= s.length <= 100
+        println!("---{s}---");
+        let k = k as usize;
+        let s: Vec<char> = s.chars().collect();
 
-        let mut factor_map = vec![vec![1]; s.len()];
+        let mut factor_map = vec![vec![]; s.len()];
         for num in 2..=s.len() {
             let mut i = num;
             while i + num <= s.len() {
@@ -117,15 +71,25 @@ impl Solution {
             }
         }
 
-        let min_change = Self::generate_palindromic_partitions(
-            0,
-            &s,
-            k as usize,
-            &mut changes_map,
-            &factor_map,
-            &mut memo,
-        );
-        min_change
+        let mut palidrome_cost = vec![vec![0; s.len()]; s.len()];
+        for start in (0..s.len()).rev() {
+            for end in start + 1..s.len() {
+                palidrome_cost[start][end] =
+                    Self::make_semi_palindrome(&s, start, end, &mut factor_map);
+            }
+        }
+
+        let mut dp = vec![vec![127; s.len() + 1]; k + 1];
+        dp[0][0] = 0;
+
+        for part in 1..=k {
+            for i in (2*part..=s.len()) {
+                for j in 0..i-1 {
+                dp[part][i] = dp[part][i].min(dp[part - 1][j] + palidrome_cost[j][i - 1]);
+                }
+            }
+        }
+        dp[k][s.len()]
     }
 }
 
@@ -358,15 +322,14 @@ mod tests {
     use super::Solution;
     fn testcases() -> Vec<(String, i32, i32)> {
         vec![
-            ("cbacccbabcaa".to_string(), 1,3),
-            ("ababaa".to_string(), 2, 0),
             ("abcabc".to_string(), 3, 3),
+            ("cbbcaacbccbacaaccbcabcaacacbababaccbbabccbcccacbcacbccbcbccbcbbaaaccbbabbaaa".to_string(), 4, 5),
+            ("abc".to_string(), 1, 1),
             ("abcac".to_string(), 2, 1),
-            ("abcac".to_string(), 2, 1),
-            ("abcabc".to_string(), 1, 0),
+            ("ababaa".to_string(), 2, 0),
+            ("cbacccbabcaa".to_string(), 1,3),
             ("aabbaa".to_string(), 3, 0),
             ("abcdef".to_string(), 2, 2),
-            ("cbbcaacbccbacaaccbcabcaacacbababaccbbabccbcccacbcacbccbcbccbcbbaaaccbbabbaaa".to_string(), 4, 5),
             ("cbbcaacbccbacaaccbcabcaacacbababaccbbabccbcccacbcacbccbcbccbcbbaaaccbbabbaaaaccccacabaabcbaabaabaaccacbbaacbacbbabaaaaacacaaacccacbaabbcbbacaacccbabbcbbaacaaacabbccbabaabbacbbcbcaaabbaabbcabccccccc".to_string(), 85,22),
             ("dcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcbadcba".to_string(),100,100),
             ("pafgscafzievqnnlubopjhuffvpcixrkrbcrecmbhmjyvcjhyhfxhpclbtzumzxkzlkprbcrdqsvkfxcuranriuhocilcthyunnfflttsbxgcamyzffyjpogtmlinlrmsihdhrxpspmrqdcdyhdlmwwcugewwhstkkrasuxzprancbtoepsbkebctsqnynxvoltwvdnj".to_string(),97, 87),
@@ -374,7 +337,7 @@ mod tests {
     }
 
     #[test]
-    fn test_partition() {
+    fn test_minimum_changes() {
         for (s, k, want) in testcases().into_iter() {
             assert_eq!(Solution::minimum_changes(s, k), want);
         }
