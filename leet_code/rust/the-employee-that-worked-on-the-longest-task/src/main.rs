@@ -44,3 +44,24 @@ mod tests {
         }
     }
 }
+
+/* Pass1
+impl Solution {
+    pub fn hardest_worker(n: i32, logs: Vec<Vec<i32>>) -> i32 {
+        let mut ans = (0,n);
+        let mut curr_time = 0;
+        logs.iter().for_each(| log | {
+            let time_spent = log[1] - curr_time;
+            if ans.0 < time_spent {
+                ans = ( time_spent, log[0] );
+            } else if ans.0 == time_spent {
+                if ans.1 > log[0] {
+                    ans.1 = log[0];
+                }
+            }
+            curr_time = log[1];
+        });
+        ans.1
+    }
+}
+*/
