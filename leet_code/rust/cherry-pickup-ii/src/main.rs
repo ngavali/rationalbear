@@ -1,7 +1,49 @@
 //https://leetcode.com/problems/cherry-pickup-ii/
 struct Solution;
 struct SolutionDpRecursive;
+struct SolutionDpRecursiveToTab;
 
+impl SolutionDpRecursiveToTab {
+    //To do - forward
+    pub fn cherry_pickup(grid: Vec<Vec<i32>>) -> i32 {
+        let m = grid[0].len();
+        let n = grid.len();
+        let mut prev = vec![vec![0; grid[0].len()]; grid[0].len()];
+        let mut next = vec![vec![0; grid[0].len()]; grid[0].len()];
+        for c1 in 0..m {
+            for c2 in 0..m {
+                next[c1][c2] = grid[n - 1][c1] + if c1 != c2 { grid[n - 1][c2] } else { 0 };
+            }
+        }
+        for r in (0..n - 1).rev() {
+            for c1 in 0..m {
+                for c2 in 0..m {
+                    prev[c1][c2] = grid[r][c1]
+                        + if c1 != c2 { grid[r][c2] } else { 0 }
+                        + vec![c1.wrapping_sub(1), c1, c1 + 1]
+                            .into_iter()
+                            .map(|next_c1| {
+                                vec![c2.wrapping_sub(1), c2, c2 + 1]
+                                    .into_iter()
+                                    .map(|next_c2| {
+                                        if next_c1 < m && next_c2 < m {
+                                            next[next_c1][next_c2]
+                                        } else {
+                                            0
+                                        }
+                                    })
+                                    .max()
+                                    .unwrap_or(0)
+                            })
+                            .max()
+                            .unwrap_or(0);
+                }
+            }
+            std::mem::swap(&mut prev, &mut next);
+        }
+        next[0][m - 1]
+    }
+}
 impl Solution {
     fn dfs(
         r: usize,
@@ -14,20 +56,22 @@ impl Solution {
         if memo[r][c1][c2] != -1 {
             return memo[r][c1][c2];
         }
-        let cherries = grid[r][c1] + if c1 != c2 {
-            grid[r][c2]
-        } else {
-            0
-        };
+        let cherries = grid[r][c1] + if c1 != c2 { grid[r][c2] } else { 0 };
         if r == mn.0 - 1 {
             return cherries;
         }
         let mut cherries_from_onwards = 0;
         for next_c1 in vec![c1.wrapping_sub(1), c1, c1 + 1] {
             for next_c2 in vec![c2.wrapping_sub(1), c2, c2 + 1] {
-                if next_c1 >= 0 && next_c1 < mn.1 && next_c2 >= 0 && next_c2 < mn.1 {
-                    cherries_from_onwards = cherries_from_onwards
-                        .max(Self::dfs(r+1, next_c1, next_c2, mn, grid, memo));
+                if next_c1 < mn.1 && next_c2 < mn.1 {
+                    cherries_from_onwards = cherries_from_onwards.max(Self::dfs(
+                        r + 1,
+                        next_c1,
+                        next_c2,
+                        mn,
+                        grid,
+                        memo,
+                    ));
                 }
             }
         }
@@ -35,8 +79,7 @@ impl Solution {
         memo[r][c1][c2]
     }
     pub fn cherry_pickup(grid: Vec<Vec<i32>>) -> i32 {
-        let mut memo =
-            vec![vec![vec![-1; grid[0].len()]; grid[0].len()]; grid.len()];
+        let mut memo = vec![vec![vec![-1; grid[0].len()]; grid[0].len()]; grid.len()];
         Self::dfs(
             0,
             0,
@@ -195,12 +238,18 @@ mod tests {
             assert_eq!(Solution::cherry_pickup(grid), want);
         }
     }
-use super::SolutionDpRecursive;
+    use super::SolutionDpRecursive;
     #[test]
     fn test_cherry_pickup_dp_recursive() {
         for (grid, want) in testcases() {
             assert_eq!(SolutionDpRecursive::cherry_pickup(grid), want);
         }
     }
-
+    use super::SolutionDpRecursiveToTab;
+    #[test]
+    fn test_cherry_pickup_dp_recursive_to_tab() {
+        for (grid, want) in testcases() {
+            assert_eq!(SolutionDpRecursiveToTab::cherry_pickup(grid), want);
+        }
+    }
 }
