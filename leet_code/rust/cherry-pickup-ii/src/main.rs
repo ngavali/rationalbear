@@ -21,8 +21,8 @@ impl SolutionDpTab {
             for c1 in 0..=r.min(m - 1) {
                 let l = if r + 1 > m { 0 } else { m - r - 1 };
                 for c2 in l..m {
-                    let robot1_next_positions = vec![c1 - 1, c1, c1 + 1];
-                    let robot2_next_positions = vec![c2 - 1, c2, c2 + 1];
+                    let robot1_next_positions = vec![c1.wrapping_sub(1), c1, c1 + 1];
+                    let robot2_next_positions = vec![c2.wrapping_sub(1), c2, c2 + 1];
                     let mut cherries_picked_sofar = 0;
                     for &prev_c1 in robot1_next_positions.iter() {
                         for &prev_c2 in robot2_next_positions.iter() {
