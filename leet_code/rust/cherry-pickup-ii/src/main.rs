@@ -2,10 +2,56 @@
 struct Solution;
 struct SolutionDpRecursive;
 struct SolutionDpRecursiveToTab;
+struct SolutionDpTab;
 
+impl SolutionDpTab {
+    //Best solution 0ms
+    pub fn cherry_pickup(grid: Vec<Vec<i32>>) -> i32 {
+        let m = grid[0].len();
+        let n = grid.len();
+        let mut prev = vec![vec![-1; m]; m];
+
+        //Initialize cherries picked at starting location for both robots
+        prev[0][m - 1] = grid[0][0] + grid[0][m - 1];
+        let mut next = vec![vec![-1; m]; m];
+        for r in 1..n {
+            //Observe
+            //robot 1 will only cover left triangle and
+            //robot 2 will only cover right triangle
+            for c1 in 0..=r.min(m - 1) {
+                let l = if r + 1 > m { 0 } else { m - r - 1 };
+                for c2 in l..m {
+                    let robot1_next_positions = vec![c1 - 1, c1, c1 + 1];
+                    let robot2_next_positions = vec![c2 - 1, c2, c2 + 1];
+                    let mut cherries_picked_sofar = 0;
+                    for &prev_c1 in robot1_next_positions.iter() {
+                        for &prev_c2 in robot2_next_positions.iter() {
+                            if prev_c1 < m && prev_c2 < m {
+                                cherries_picked_sofar =
+                                    cherries_picked_sofar.max(prev[prev_c1][prev_c2]);
+                            }
+                        }
+                    }
+                    let cherries_collected = grid[r][c1] + if c1 != c2 { grid[r][c2] } else { 0 };
+                    next[c1][c2] = cherries_collected + cherries_picked_sofar;
+                }
+            }
+            std::mem::swap(&mut prev, &mut next);
+        }
+
+        prev.into_iter()
+            .map(|row| row.into_iter().map(|val| val).max().unwrap_or(0))
+            .max()
+            .unwrap_or(0)
+    }
+}
 impl SolutionDpRecursiveToTab {
     //To do - forward
     pub fn cherry_pickup(grid: Vec<Vec<i32>>) -> i32 {
+        println!("------- grid ------");
+        for r in grid.iter() {
+            println!("{r:?}");
+        }
         let m = grid[0].len();
         let n = grid.len();
         let mut prev = vec![vec![0; grid[0].len()]; grid[0].len()];
@@ -41,9 +87,14 @@ impl SolutionDpRecursiveToTab {
             }
             std::mem::swap(&mut prev, &mut next);
         }
+        println!("{prev:?}");
+        println!("{next:?}");
+
         next[0][m - 1]
     }
 }
+
+//Best solution so far 22ms
 impl Solution {
     fn dfs(
         r: usize,
@@ -56,13 +107,20 @@ impl Solution {
         if memo[r][c1][c2] != -1 {
             return memo[r][c1][c2];
         }
-        let cherries = grid[r][c1] + if c1 != c2 { grid[r][c2] } else { 0 };
+        let mut cherries = grid[r][c1];
+        if c1 != c2 {
+            cherries += grid[r][c2];
+        };
+
         if r == mn.0 - 1 {
             return cherries;
         }
+
+        let robot1_next_positions = vec![c1.wrapping_sub(1), c1, c1 + 1];
+        let robot2_next_positions = vec![c2.wrapping_sub(1), c2, c2 + 1];
         let mut cherries_from_onwards = 0;
-        for next_c1 in vec![c1.wrapping_sub(1), c1, c1 + 1] {
-            for next_c2 in vec![c2.wrapping_sub(1), c2, c2 + 1] {
+        for &next_c1 in robot1_next_positions.iter() {
+            for &next_c2 in robot2_next_positions.iter() {
                 if next_c1 < mn.1 && next_c2 < mn.1 {
                     cherries_from_onwards = cherries_from_onwards.max(Self::dfs(
                         r + 1,
@@ -75,8 +133,9 @@ impl Solution {
                 }
             }
         }
-        memo[r][c1][c2] = cherries + cherries_from_onwards;
-        memo[r][c1][c2]
+        cherries += cherries_from_onwards;
+        memo[r][c1][c2] = cherries;
+        cherries
     }
     pub fn cherry_pickup(grid: Vec<Vec<i32>>) -> i32 {
         let mut memo = vec![vec![vec![-1; grid[0].len()]; grid[0].len()]; grid.len()];
@@ -90,7 +149,6 @@ impl Solution {
         )
     }
 }
-
 impl SolutionDpRecursive {
     fn dfs(
         r1_pos: (usize, usize),
@@ -157,6 +215,21 @@ fn main() {
 mod tests {
     fn testcases() -> Vec<(Vec<Vec<i32>>, i32)> {
         vec![
+            (
+                vec![
+                    vec![0, 40, 0, 0, 0, 0, 0, 0, 93, 0],
+                    vec![0, 0, 41, 0, 0, 0, 0, 59, 0, 0],
+                    vec![89, 0, 0, 0, 0, 0, 0, 0, 0, 28],
+                    vec![0, 32, 0, 0, 0, 0, 0, 0, 80, 0],
+                    vec![0, 0, 40, 0, 0, 0, 0, 0, 0, 0],
+                    vec![50, 0, 0, 0, 0, 0, 0, 0, 0, 66],
+                    vec![0, 90, 0, 0, 0, 0, 0, 0, 11, 0],
+                    vec![0, 0, 62, 0, 0, 0, 0, 12, 0, 0],
+                    vec![95, 0, 0, 0, 0, 0, 0, 0, 0, 88],
+                    vec![0, 31, 0, 0, 0, 0, 0, 0, 26, 0],
+                ],
+                686,
+            ),
             (
                 vec![
                     vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 2],
@@ -250,6 +323,13 @@ mod tests {
     fn test_cherry_pickup_dp_recursive_to_tab() {
         for (grid, want) in testcases() {
             assert_eq!(SolutionDpRecursiveToTab::cherry_pickup(grid), want);
+        }
+    }
+    use super::SolutionDpTab;
+    #[test]
+    fn test_cherry_pickup_dp_tab() {
+        for (grid, want) in testcases() {
+            assert_eq!(SolutionDpTab::cherry_pickup(grid), want);
         }
     }
 }
