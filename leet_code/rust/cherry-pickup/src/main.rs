@@ -12,33 +12,30 @@ impl SolutionDp {
         for step in 1..=2 * n - 2 {
             let l = if step >= n { step - n + 1 } else { 0 };
             let mut next = vec![vec![i32::MIN; n]; n];
-            for r1 in l..n.min(step + 1) {
-                for r2 in l..n.min(step + 1) {
-                    let (c1, c2) = (step - r1, step - r2);
-                    if grid[r1][c1] == -1 || grid[r2][c2] == -1 {
+            for r1 in l..n.min(step+1) {
+                let c1 = step - r1;
+                if grid[r1][c1] == -1 {
+                    continue;
+                }
+                for r2 in l..n.min(step+1) {
+                    let c2 = step - r2;
+                    if grid[r2][c2] == -1 {
                         continue;
                     }
                     let mut cherries_picked = grid[r1][c1];
                     if r1 != r2 {
                         cherries_picked += grid[r2][c2];
                     }
-                    let prev_picked_cherries = prev[r1][r2].max(
+                    let mut prev_picked_cherries = prev[r1][r2];
                     if r1 > 0 {
-                        prev[r1 - 1][r2].max(
-                            if r2 > 0 {
-                                prev[r1 - 1][r2 - 1]
-                            } else {
-                                -200
-                            }
-                        )
-                    } else {
-                        -200
-                    }).max(
+                        prev_picked_cherries = prev_picked_cherries.max(prev[r1 - 1][r2]);
+                        if r2 > 0 {
+                            prev_picked_cherries = prev_picked_cherries.max(prev[r1 - 1][r2 - 1]);
+                        }
+                    }
                     if r2 > 0 {
-                        prev[r1][r2 - 1]
-                    } else {
-                        -200
-                    });
+                        prev_picked_cherries = prev_picked_cherries.max(prev[r1][r2 - 1]);
+                    }
                     next[r1][r2] = cherries_picked + prev_picked_cherries;
                 }
             }
