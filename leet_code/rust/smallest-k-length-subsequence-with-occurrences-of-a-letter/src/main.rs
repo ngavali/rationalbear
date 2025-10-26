@@ -5,43 +5,34 @@ impl Solution {
     pub fn smallest_subsequence(s: String, k: i32, letter: char, repetition: i32) -> String {
         let n_1 = s.len() - 1;
         let k = k as usize;
-        let mut repetition = repetition as usize;
+        let mut repetition = repetition;
         let mut stack = Vec::<char>::with_capacity(k);
         let mut letter_count = 0;
         s.chars().for_each(|c| {
             if c == letter {
-                letter_count += 1;
+                letter_count+=1;
             }
         });
-        let mut excess = 0;
         for (i, c) in s.chars().enumerate() {
             while !stack.is_empty()
                 && stack[stack.len() - 1] > c
                 && (stack.len() + n_1 - i) >= k
                 && (stack[stack.len() - 1] != letter || repetition < letter_count)
             {
-                let some_c = stack.pop().unwrap();
-                if some_c == letter {
+                if stack[stack.len() - 1] == letter {
                     //Dont count back to repetition until excess are spilled out
-                    if excess > 0 {
-                        excess -= 1;
-                    } else {
-                        repetition += 1;
-                    }
+                    repetition += 1;
                 }
+                stack.pop();
             }
             if c == letter {
                 if stack.len() < k {
                     //If done required repetition then count on the excess
-                    if repetition > 0 {
-                        repetition -= 1;
-                    } else {
-                        excess += 1;
-                    }
+                    repetition -= 1;
                     stack.push(c);
                 }
                 letter_count -= 1;
-            } else if stack.len() + repetition < k {
+            } else if stack.len() as i32 + 0.max(repetition) < k as i32 {
                 stack.push(c);
             }
         }
