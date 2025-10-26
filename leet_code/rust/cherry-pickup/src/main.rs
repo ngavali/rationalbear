@@ -11,7 +11,7 @@ impl SolutionDp {
         prev[0][0] = grid[0][0];
         for step in 1..=2 * n - 2 {
             let l = if step >= n { step - n + 1 } else { 0 };
-            let mut next = vec![vec![i32::MIN; n]; n];
+            let mut next = vec![vec![-200; n]; n];
             for r1 in l..n.min(step+1) {
                 let c1 = step - r1;
                 if grid[r1][c1] == -1 {
