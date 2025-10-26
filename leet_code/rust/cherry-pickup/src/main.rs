@@ -6,18 +6,19 @@ struct SolutionDp;
 impl SolutionDp {
     pub fn cherry_pickup(grid: Vec<Vec<i32>>) -> i32 {
         let n = grid.len();
+        let n_1 = n-1;
         //Contraints 1 <= n <= 50, max is 2 * 50 - 2 steps, so twice is 198 pickups max
-        let mut prev = vec![vec![-200; grid.len()]; grid.len()];
+        let mut prev = vec![vec![-200; n]; n];
         prev[0][0] = grid[0][0];
-        for step in 1..=2 * n - 2 {
+        for step in 1..=2*n_1 {
             let l = if step >= n { step - n + 1 } else { 0 };
             let mut next = vec![vec![-200; n]; n];
-            for r1 in l..n.min(step+1) {
+            for r1 in l..=n_1.min(step) {
                 let c1 = step - r1;
                 if grid[r1][c1] == -1 {
                     continue;
                 }
-                for r2 in l..n.min(step+1) {
+                for r2 in l..=n_1.min(step) {
                     let c2 = step - r2;
                     if grid[r2][c2] == -1 {
                         continue;
