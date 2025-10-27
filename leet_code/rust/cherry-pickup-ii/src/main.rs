@@ -14,15 +14,15 @@ impl SolutionDpTab {
         //Initialize cherries picked at starting location for both robots
         prev[0][m - 1] = grid[0][0] + grid[0][m - 1];
         let mut next = vec![vec![-1; m]; m];
-        for r in 1..n {
+            for (r, _) in grid.iter().enumerate().take(n).skip(1) {
             //Observe
             //robot 1 will only cover left triangle and
             //robot 2 will only cover right triangle
-            for c1 in 0..=r.min(m - 1) {
+                for (c1, next_c1) in next.iter_mut().enumerate().take(r.min(m - 1) + 1) {
                 let l = if r + 1 > m { 0 } else { m - r - 1 };
-                for c2 in l..m {
-                    let robot1_next_positions = vec![c1.wrapping_sub(1), c1, c1 + 1];
-                    let robot2_next_positions = vec![c2.wrapping_sub(1), c2, c2 + 1];
+                for (c2, next_c1_c2) in next_c1.iter_mut().enumerate().take(m).skip(l) {
+                    let robot1_next_positions = [c1.wrapping_sub(1), c1, c1 + 1];
+                    let robot2_next_positions = [c2.wrapping_sub(1), c2, c2 + 1];
                     let mut cherries_picked_sofar = 0;
                     for &prev_c1 in robot1_next_positions.iter() {
                         for &prev_c2 in robot2_next_positions.iter() {
@@ -33,14 +33,14 @@ impl SolutionDpTab {
                         }
                     }
                     let cherries_collected = grid[r][c1] + if c1 != c2 { grid[r][c2] } else { 0 };
-                    next[c1][c2] = cherries_collected + cherries_picked_sofar;
+                    *next_c1_c2 = cherries_collected + cherries_picked_sofar;
                 }
             }
             std::mem::swap(&mut prev, &mut next);
         }
 
         prev.into_iter()
-            .map(|row| row.into_iter().map(|val| val).max().unwrap_or(0))
+            .map(|row| row.into_iter().max().unwrap_or(0))
             .max()
             .unwrap_or(0)
     }
@@ -56,15 +56,15 @@ impl SolutionDpRecursiveToTab {
         let n = grid.len();
         let mut prev = vec![vec![0; grid[0].len()]; grid[0].len()];
         let mut next = vec![vec![0; grid[0].len()]; grid[0].len()];
-        for c1 in 0..m {
-            for c2 in 0..m {
-                next[c1][c2] = grid[n - 1][c1] + if c1 != c2 { grid[n - 1][c2] } else { 0 };
+        for (c1, next_c1) in next.iter_mut().enumerate().take(m) {
+                for (c2, next_c1_c2) in next_c1.iter_mut().enumerate().take(m) {
+                *next_c1_c2 = grid[n - 1][c1] + if c1 != c2 { grid[n - 1][c2] } else { 0 };
             }
         }
         for r in (0..n - 1).rev() {
-            for c1 in 0..m {
-                for c2 in 0..m {
-                    prev[c1][c2] = grid[r][c1]
+            for (c1, prev_c1) in prev.iter_mut().enumerate().take(m) {
+            for (c2, prev_c1_c2) in prev_c1.iter_mut().enumerate().take(m) {
+                    *prev_c1_c2 = grid[r][c1]
                         + if c1 != c2 { grid[r][c2] } else { 0 }
                         + vec![c1.wrapping_sub(1), c1, c1 + 1]
                             .into_iter()
@@ -116,8 +116,8 @@ impl Solution {
             return cherries;
         }
 
-        let robot1_next_positions = vec![c1.wrapping_sub(1), c1, c1 + 1];
-        let robot2_next_positions = vec![c2.wrapping_sub(1), c2, c2 + 1];
+        let robot1_next_positions = [c1.wrapping_sub(1), c1, c1 + 1];
+        let robot2_next_positions = [c2.wrapping_sub(1), c2, c2 + 1];
         let mut cherries_from_onwards = 0;
         for &next_c1 in robot1_next_positions.iter() {
             for &next_c2 in robot2_next_positions.iter() {

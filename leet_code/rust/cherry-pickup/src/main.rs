@@ -11,7 +11,7 @@ impl SolutionDp {
         let mut prev = vec![vec![-200; n]; n];
         prev[0][0] = grid[0][0];
         for step in 1..=2*n_1 {
-            let l = if step > n_1 { step - n_1 } else { 0 };
+            let l = step.saturating_sub(n_1);
             let mut next = vec![vec![-200; n]; n];
             for r1 in l..=n_1.min(step) {
                 let c1 = step - r1;
@@ -124,7 +124,7 @@ impl Solution {
         }
 
         let mut cherries_picked = i32::MIN;
-        for next_pos in vec![
+        for next_pos in [
             (r1 + 1, c1, r2 + 1),
             (r1 + 1, c1, r2),
             (r1, c1 + 1, r2),
