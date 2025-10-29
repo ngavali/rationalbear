@@ -4,19 +4,16 @@ struct Solution;
 impl Solution {
     pub fn find_min_arrow_shots(points: Vec<Vec<i32>>) -> i32 {
         let mut points = points;
-        points.sort_by(|a, b| a.cmp(&b));
-        let mut c = 1;
-        let mut c_r = (points[0][0], points[0][1]);
+        points.sort_unstable();
+        let mut c_r = (1, points[0][0], points[0][1]);
         points[1..].iter().for_each(|p| {
-            if c_r.1 < p[0] {
-                c_r = (p[0], p[1]);
-                c += 1;
+            c_r = if c_r.2 < p[0] {
+                (c_r.0+1, p[0], p[1])
             } else {
-                c_r.1 = c_r.1.min(p[1]);
-                c_r.0 = c_r.0.max(p[0]);
+                (c_r.0, c_r.1.max(p[0]), c_r.2.min(p[1]))
             }
         });
-        c
+        c_r.0
     }
 }
 
