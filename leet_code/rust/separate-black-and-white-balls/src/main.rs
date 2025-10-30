@@ -1,22 +1,17 @@
 //https://leetcode.com/problems/separate-black-and-white-balls/
 struct Solution;
+
 impl Solution {
     pub fn minimum_steps(s: String) -> i64 {
-        //let mut ones = 0;
-        //let mut to_shift_ones = 0;
         let mut zeroes = 0;
         let mut shift_zero_to_its_position = 0;
-        for (i, c) in s.chars().enumerate() {
-            if c == '0' {
-                shift_zero_to_its_position += i as i64 - zeroes;
+        for (i, &c) in s.as_bytes().iter().enumerate() {
+            if c == 48 {
+                shift_zero_to_its_position += i - zeroes;
                 zeroes += 1;
-                //to_shift_ones += ones;
-                //} else {
-                //    ones +=1;
             }
         }
-        //println!("{shift_zero_to_its_position} {to_shift_ones}");
-        shift_zero_to_its_position
+        shift_zero_to_its_position as i64
     }
 }
 
