@@ -9,6 +9,7 @@ struct SnapshotArray {
  * `&self` means the method takes an immutable reference.
  * If you need a mutable reference, change it to `&mut self` instead.
  */
+
 impl SnapshotArray {
     fn new(length: i32) -> Self {
         SnapshotArray {
