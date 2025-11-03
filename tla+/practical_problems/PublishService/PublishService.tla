@@ -11,27 +11,25 @@ EXTENDS Naturals, Sequences, FiniteSets, TLC
 
 CONSTANTS 
     LeadershipBonus,
+    BeginNodeIteration,
     MaxNodeIterations,
     BeginNodeHealth,
     OutputCount,
+    BeginNodeOutputCount,
+    Nodes,
     NodeIpAddr,
-    None,
-    Nodes
+    None
 
 ASSUME IsFiniteSet(Nodes)
 ASSUME IsFiniteSet(NodeIpAddr)
 
 VARIABLES 
-    NodeHealth,      \* [node -> NodeHealth value]
     NodeIteration,   \* [node -> NodeIteration count]
-    Leader,          \* current Leader node or Null
+    NodeHealth,      \* [node -> NodeHealth value]
     NodeOutput,
+    NodePublishLog,  \* set of nodes that have published in this NodeIteration
     pc,
-    NodePublishLog   \* set of nodes that have published in this NodeIteration
-
-States == {"ELECT_LEADER", "ITERATION_START", "GENERATE_OUTPUT", "PREPARE_PUBLISH", "EXEC_PUBLISH", "SET_HEALTH_BEFORE", "SET_HEALTH_AFTER", "ITERATION_COMPLETE", "DONE"}
-
-MaxNodeHealth == OutputCount + LeadershipBonus
+    Leader           \* current Leader node or Null
 
 \* --- Helpers ---
 \* Find Max in Set
@@ -50,8 +48,8 @@ SumSet(S) ==
 Init ==
     /\ pc =             [n \in Nodes |-> "ELECT_LEADER"]
     /\ NodeHealth =     [n \in Nodes |-> BeginNodeHealth]
-    /\ NodeIteration =  [n \in Nodes |-> 1]
-    /\ NodeOutput =     [n \in Nodes |-> 1]
+    /\ NodeIteration =  [n \in Nodes |-> BeginNodeIteration]
+    /\ NodeOutput =     [n \in Nodes |-> BeginNodeOutputCount]
     /\ NodePublishLog = [n \in Nodes |-> 0]
     /\ Leader =         None
 
@@ -102,22 +100,25 @@ EXEC_PUBLISH(n) ==
     /\ pc' = [pc EXCEPT ![n] = "SET_HEALTH_AFTER"]
     /\ UNCHANGED << NodeHealth, Leader, NodeIteration, NodeOutput >>
 
+(* --- Update ---
+ * Lets switch leader when we set the health
+ *)
 SET_HEALTH_BEFORE(n) == 
     /\ pc[n] = "SET_HEALTH_BEFORE"
     /\ pc' = [pc EXCEPT ![n] = "GENERATE_OUTPUT"]
     /\ NodeHealth' = [NodeHealth EXCEPT ![n] = NodeOutput[n] + IF Leader = n THEN LeadershipBonus ELSE 0]
-    /\ LET maxH == Max({ NodeHealth[n1] : n1 \in Nodes })
-           maxNodes == { n1 \in Nodes : NodeHealth[n1] = maxH }
-        IN Leader' = CHOOSE n1 \in maxNodes : NodeIpAddr[n1] = Max({ NodeIpAddr[nx] : nx \in maxNodes })
+    /\ LET maxH == Max({ NodeHealth'[n1] : n1 \in Nodes })
+           maxNodes == { n1 \in Nodes : NodeHealth'[n1] = maxH }
+       IN Leader' = CHOOSE n1 \in maxNodes : NodeIpAddr[n1] = Max({ NodeIpAddr[nx] : nx \in maxNodes })
     /\ UNCHANGED << NodeIteration, NodeOutput, NodePublishLog >>
 
 SET_HEALTH_AFTER(n) == 
     /\ pc[n] = "SET_HEALTH_AFTER"
     /\ pc' = [pc EXCEPT ![n] = "ITERATION_COMPLETE"]
     /\ NodeHealth' = [NodeHealth EXCEPT ![n] = NodeOutput[n] + IF Leader = n THEN LeadershipBonus ELSE 0]
-    /\ LET maxH == Max({ NodeHealth[n1] : n1 \in Nodes })
-           maxNodes == { n1 \in Nodes : NodeHealth[n1] = maxH }
-        IN Leader' = CHOOSE n1 \in maxNodes : NodeIpAddr[n1] = Max({ NodeIpAddr[nx] : nx \in maxNodes })
+    /\ LET maxH == Max({ NodeHealth'[n1] : n1 \in Nodes })
+           maxNodes == { n1 \in Nodes : NodeHealth'[n1] = maxH }
+       IN Leader' = CHOOSE n1 \in maxNodes : NodeIpAddr[n1] = Max({ NodeIpAddr[nx] : nx \in maxNodes })
     /\ UNCHANGED << NodeIteration, NodeOutput, NodePublishLog >>
 
 ITERATION_COMPLETE(n) ==
@@ -126,13 +127,7 @@ ITERATION_COMPLETE(n) ==
     /\ NodeIteration' = [NodeIteration EXCEPT ![n] = @ + 1]
     /\ UNCHANGED <<NodeHealth, NodeOutput, Leader, NodePublishLog >>
 
-TypeOK ==
-    /\ Leader \in Nodes \cup {None}
-    /\ NodeIteration \in [Nodes -> Nat]
-    /\ NodeOutput \in [Nodes -> Nat]
-    /\ NodePublishLog \in [Nodes -> Nat]
-    /\ pc \in [Nodes -> States]
-    
+   
 AllStopped == \A n \in Nodes : pc[n] = "DONE"
 
 vars == <<NodeHealth, NodeIteration, NodeOutput, Leader, pc, NodePublishLog >>
@@ -141,15 +136,18 @@ Done ==
     AllStopped
     /\ UNCHANGED vars
 
+PublishService(n) == 
+        \/ ELECT_LEADER(n)
+        \/ SET_HEALTH_BEFORE(n)
+        \/ SET_HEALTH_AFTER(n)
+        \/ ITERATION_START(n)
+        \/ GENERATE_OUTPUT(n)
+        \/ PREPARE_PUBLISH(n)
+        \/ EXEC_PUBLISH(n)
+        \/ ITERATION_COMPLETE(n)
+        
 Next ==
-        \/ \E n \in Nodes : ELECT_LEADER(n)
-        \/ \E n \in Nodes : SET_HEALTH_BEFORE(n)
-        \/ \E n \in Nodes : SET_HEALTH_AFTER(n)
-        \/ \E n \in Nodes : ITERATION_START(n)
-        \/ \E n \in Nodes : GENERATE_OUTPUT(n)
-        \/ \E n \in Nodes : PREPARE_PUBLISH(n)
-        \/ \E n \in Nodes : EXEC_PUBLISH(n)
-        \/ \E n \in Nodes : ITERATION_COMPLETE(n)
+        \/ \E n \in Nodes : PublishService(n)
         \/ Done 
 
 (* --- Termination condition (optional) ---
@@ -157,6 +155,18 @@ Termination ==
     Done
 *)
 \* Invariants
+
+States == {"ELECT_LEADER", "ITERATION_START", "GENERATE_OUTPUT", "PREPARE_PUBLISH", "EXEC_PUBLISH", "SET_HEALTH_BEFORE", "SET_HEALTH_AFTER", "ITERATION_COMPLETE", "DONE"}
+
+MaxNodeHealth == OutputCount + LeadershipBonus
+
+TypeOK ==
+    /\ Leader \in Nodes \cup {None}
+    /\ NodeIteration \in [Nodes -> Nat]
+    /\ NodeOutput \in [Nodes -> Nat]
+    /\ NodePublishLog \in [Nodes -> Nat]
+    /\ pc \in [Nodes -> States]
+ 
 \* We MUST have a Leader after ELECTLeader is done
 LeaderElectedOK ==
     \/ Leader # None
