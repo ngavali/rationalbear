@@ -2,12 +2,12 @@
 EXTENDS PublishService, TLC
 
 \* CONSTANT definitions @modelParameterConstants:0OutputCount
-const_176219676255038000 == 
+const_1762197053134132000 == 
 300
 ----
 
 \* CONSTANT definitions @modelParameterConstants:1NodeIpAddr
-const_176219676255039000 == 
+const_1762197053134133000 == 
 [ 
 	N1 |-> 1, 
 	N2 |-> 2 
@@ -15,35 +15,35 @@ const_176219676255039000 ==
 ----
 
 \* CONSTANT definitions @modelParameterConstants:2Nodes
-const_176219676255040000 == 
+const_1762197053134134000 == 
 { "N1", "N2" }
 ----
 
 \* CONSTANT definitions @modelParameterConstants:3BeginNodeHealth
-const_176219676255041000 == 
+const_1762197053134135000 == 
 1
 ----
 
 \* CONSTANT definitions @modelParameterConstants:4LeadershipBonus
-const_176219676255042000 == 
+const_1762197053134136000 == 
 5
 ----
 
 \* CONSTANT definitions @modelParameterConstants:6MaxNodeIterations
-const_176219676255043000 == 
+const_1762197053134137000 == 
 2
 ----
 
 \* CONSTANT definitions @modelParameterConstants:7BeginNodeOutputCount
-const_176219676255044000 == 
+const_1762197053134138000 == 
 1
 ----
 
 \* CONSTANT definitions @modelParameterConstants:8BeginNodeIteration
-const_176219676255045000 == 
+const_1762197053134139000 == 
 1
 ----
 
 =============================================================================
 \* Modification History
-\* Created Tue Nov 04 00:36:02 IST 2025 by ngavali
+\* Created Tue Nov 04 00:40:53 IST 2025 by ngavali
