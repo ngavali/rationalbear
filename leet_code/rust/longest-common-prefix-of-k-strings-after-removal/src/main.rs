@@ -12,97 +12,92 @@ struct NodePass1 {
 #[derive(Clone)]
 struct Node {
     cnt: i32,
-    nodes: HashMap<u8, Node>,
+    nodes: Vec<Option<Node>>,
 }
 
 impl Solution {
     fn search_in_trie(
-        search_word: &Vec<u8>,
+        search_word: &Vec<char>,
         level: usize,
         k: i32,
-        trie: &Node,
-    ) -> usize {
+        trie: &Option<Node>,
+    ) -> i32 {
+        let mut ml = level as i32;
         if level < search_word.len()
-            && let Some(node) = trie.nodes.get(&search_word[level])
+            && let Some(curr_node) = trie
         {
-            if node.cnt >= k {
-                return Self::search_in_trie(search_word, level + 1, k, &node);
+            if let Some(ref node) = curr_node.nodes[search_word[level] as usize - 97] {
+                if node.cnt >= k {
+                    ml = Self::search_in_trie(search_word, level + 1, k, &curr_node.nodes[search_word[level] as usize - 97]);
+                }
             }
         }
-        level 
+        ml
     }
 
-    fn build_trie(word: &String, mut trie: &mut Node) {
-        for &c in word.as_bytes() {
-            trie.nodes
-                .entry(c)
-                .and_modify(|e| {
-                    e.cnt += 1;
-                })
-                .or_insert(Node {
-                    cnt: 1,
-                    nodes: HashMap::new(),
-                });
-            trie = trie.nodes.get_mut(&c).unwrap();
-        }
-    }
-
-    fn find_trie(word: &String, k: i32, mut trie: &Node) -> i32 {
-        let mut level = 0;
-        for c in word.as_bytes() {
-            if let Some(node) = trie.nodes.get(c) && node.cnt >= k {
-                level+=1;
-                trie = trie.nodes.get(&c).unwrap();
+    fn build_tree(word: &Vec<u8>, mut trie: &mut Option<Node>) {
+        for c in word {
+            if let Some(node) = trie {
+                if let Some(next_node) = node.nodes[(c - 97) as usize].as_mut() {
+                    next_node.cnt += 1;
+                } else {
+                    let next_node = Some(Node{
+                        cnt: 1,
+                        nodes: vec![None; 26],
+                    });
+                    node.nodes[(c - 97) as usize] = next_node;
+                }
+                trie = &mut node.nodes[(c - 97) as usize];
             }
         }
-        level
     }
-    
-    fn remove_trie(word: &String, mut trie: &mut Node) {
-        for &c in word.as_bytes() {
-            trie.nodes
-                .entry(c)
-                .and_modify(|e| {
-                    e.cnt -= 1;
-                });
-            trie = trie.nodes.get_mut(&c).unwrap();
+
+    fn remove_tree(word: &Vec<u8>, mut trie: &mut Option<Node>) {
+        for c in word {
+            if let Some(node) = trie {
+                if let Some(next_node) = node.nodes[(c - 97) as usize].as_mut() {
+                    next_node.cnt -= 1;
+                }
+                trie = &mut node.nodes[(c - 97) as usize];
+            }
         }
     }
 
     pub fn longest_common_prefix(words: Vec<String>, k: i32) -> Vec<i32> {
-        let mut trie = Node {
+        let mut trie = Some(Node {
             cnt: 0,
-            nodes: HashMap::new(),
-        };
+            nodes: vec![None; 26],
+        });
 
         let mut result: Vec<i32> = Vec::new();
         for word in words.iter() {
-            Self::build_trie(&word, &mut trie);
+            Self::build_tree(&word.as_bytes().to_vec(), &mut trie);
         }
 
-        let mut memory_a: HashMap<&String, usize> = HashMap::new();
-        let mut memory: HashMap<(&String, &String), usize> = HashMap::new();
-
-        for i in 0..words.len() {
-            let mut lcp_a = 0;
-            result.push(*memory_a.entry(&words[i]).or_insert_with(|| {
-                Self::remove_trie(&words[i], &mut trie);
-                for j in 0..words.len() {
-                    if i != j {
-                        lcp_a = lcp_a.max(*memory.entry((&words[i],&words[j])).or_insert_with(|| {
-                            let loop_s = Self::find_trie(
-                                &words[j],
-                                k,
-                                &mut trie,
+        let mut memory: HashMap<(&String, &String), i32> = HashMap::new();
+        let mut memory_a: HashMap<&String, i32> = HashMap::new();
+        for (i, skip_word) in words.iter().enumerate() {
+            let mut lcp = 0;
+            Self::remove_tree(&skip_word.as_bytes().to_vec(), &mut trie);
+            result.push(
+                *memory_a.entry(skip_word).or_insert_with(|| {
+                    for (j, search_word) in words.iter().enumerate() {
+                        if i != j {
+                            lcp = lcp.max(//*memory.entry((skip_word, search_word)).or_insert_with(|| {
+                                Self::search_in_trie(
+                                    &search_word.chars().collect(),
+                                    0,
+                                    k,
+                                    &trie,
+                                )
+                            //})
                             );
-                            //println!("{rec_s} == {loop_s} -> {}", rec_s == loop_s as usize);
-                            loop_s as usize
-                        }));
+                        }
                     }
-                }
-                Self::build_trie(&words[i], &mut trie);
-                lcp_a
-            }) as i32);
+                lcp
+                })
+            );
+            Self::build_tree(&skip_word.as_bytes().to_vec(), &mut trie);
         }
         result
     }
