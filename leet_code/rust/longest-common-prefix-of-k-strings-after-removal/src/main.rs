@@ -15,7 +15,87 @@ struct Node {
     nodes: Vec<Option<Node>>,
 }
 
+impl Node {
+    pub fn new(cnt: i32) -> Self {
+        Node{
+            cnt: cnt,
+            nodes: vec![None; 123]
+        }
+    }
+}
+
 impl Solution {
+
+    fn build_trie(word: &String, k: i32, mut trie: &mut Node) -> i32 {
+        let mut ml = 0;
+        let mut l = 1;
+        for c in word.chars() {
+            if let Some(ref mut next_node) = trie.nodes[c as usize] {
+                next_node.cnt += 1;
+                if next_node.cnt >= k {
+                    ml = l;
+                }
+            } else {
+                if 1 >= k {
+                    ml = l;
+                }
+                trie.nodes[c as usize] = Some(Node::new(1));
+            }
+            trie = trie.nodes[c as usize].as_mut().unwrap();
+            l+=1;
+        }
+        ml
+    }
+
+    fn remove_trie(word: &String, k: i32, mut trie: &mut Node) -> i32 {
+        let mut ml = 0;
+        let mut l = 1;
+        for c in word.chars() {
+            if let Some(ref mut next_node) = trie.nodes[c as usize] {
+                if next_node.cnt >= k {
+                    ml = l;
+                }
+                next_node.cnt -= 1;
+            }
+            trie = trie.nodes[c as usize].as_mut().unwrap();
+            l += 1;
+        }
+        ml
+    }
+
+    pub fn longest_common_prefix(words: Vec<String>, k: i32) -> Vec<i32> {
+        let mut trie = Node::new(0);
+        let mut result: Vec<i32> = Vec::with_capacity(k as usize);
+        let mut max_l = HashMap::new();
+
+        for (i, word) in words.iter().enumerate() {
+            let l = Self::build_trie(&word, k, &mut trie);
+            if l > 0 {
+                max_l.entry(l).and_modify(|f| *f+=1).or_insert(1);
+            }
+        }
+        for (i, skip_word) in words.iter().enumerate() {
+            let mut lcp = 0;
+            let l = Self::remove_trie(&skip_word, k, &mut trie);
+            if l > 0 {
+                max_l.entry(l).and_modify(|f| *f-=1);
+            }
+            result.push(
+                max_l.iter().map(|(&key, &value)| {
+                    if value > 0 {key} else {0}}
+                ).max().unwrap_or(0)
+            );
+            let l = Self::build_trie(&skip_word, k, &mut trie);
+            if l > 0 {
+                max_l.entry(l).and_modify(|f| *f+=1).or_insert(1);
+            }
+        }
+        result
+    }
+}
+
+struct SolutionPass2;
+impl SolutionPass2 {
     fn search_in_trie(
         search_word: &Vec<char>,
         level: usize,
