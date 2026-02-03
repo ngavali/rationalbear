@@ -44,9 +44,7 @@ impl Solution {
                 if bit == 0 {
                     continue;
                 }
-                let n_tight = if 1 == bit { 1 } else { 0 };
-                memo_curr[1][ones] =
-                    (memo_curr[1][ones] + memo[if 1 == bit { 1 } else { 0 }][ones + 1]) % MOD;
+                memo_curr[1][ones] = (memo_curr[1][ones] + memo[1][ones + 1]) % MOD;
             }
             memo = memo_curr;
         }
