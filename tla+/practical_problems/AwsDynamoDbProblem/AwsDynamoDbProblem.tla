@@ -43,14 +43,11 @@ variables
                 mutex := {self};
             LockAcquired:
                 skip;
-            GetActivePlan:
-                if SelectSeq(deletedPlans, LAMBDA x: x = activePlan ) # <<activePlan>> then
-                UpdatePlan:
-                    rollbackPlan := activePlan;
-                    activePlan := workingOnPlan;
-                    enactorPlans[self] := workingOnPlan;
-                    enactedPlans := Append(enactedPlans, workingOnPlan);
-                end if;
+            UpdatePlan:
+                rollbackPlan := activePlan;
+                activePlan := workingOnPlan;
+                enactorPlans[self] := workingOnPlan;
+                enactedPlans := Append(enactedPlans, workingOnPlan);
             LockRelease:
                 if mutex = {self} then
                     LockReleased:
@@ -65,7 +62,7 @@ variables
     end process;
 
 end algorithm; *)
-\* BEGIN TRANSLATION (chksum(pcal) = "46563a95" /\ chksum(tla) = "b9ebab4f")
+\* BEGIN TRANSLATION (chksum(pcal) = "acda1da9" /\ chksum(tla) = "7438021e")
 VARIABLES rollbackPlan, activePlan, generatedPlans, enactorPlans, 
           enactedPlans, deletedPlans, mutex, pc, planId, workingOnPlan
 
@@ -123,19 +120,10 @@ WaitForLock(self) == /\ pc[self] = "WaitForLock"
 
 LockAcquired(self) == /\ pc[self] = "LockAcquired"
                       /\ TRUE
-                      /\ pc' = [pc EXCEPT ![self] = "GetActivePlan"]
+                      /\ pc' = [pc EXCEPT ![self] = "UpdatePlan"]
                       /\ UNCHANGED << rollbackPlan, activePlan, generatedPlans, 
                                       enactorPlans, enactedPlans, deletedPlans, 
                                       mutex, planId, workingOnPlan >>
-
-GetActivePlan(self) == /\ pc[self] = "GetActivePlan"
-                       /\ IF SelectSeq(deletedPlans, LAMBDA x: x = activePlan ) # <<activePlan>>
-                             THEN /\ pc' = [pc EXCEPT ![self] = "UpdatePlan"]
-                             ELSE /\ pc' = [pc EXCEPT ![self] = "LockRelease"]
-                       /\ UNCHANGED << rollbackPlan, activePlan, 
-                                       generatedPlans, enactorPlans, 
-                                       enactedPlans, deletedPlans, mutex, 
-                                       planId, workingOnPlan >>
 
 UpdatePlan(self) == /\ pc[self] = "UpdatePlan"
                     /\ rollbackPlan' = activePlan
@@ -173,9 +161,9 @@ DeleteOldPlans(self) == /\ pc[self] = "DeleteOldPlans"
                                         planId, workingOnPlan >>
 
 Enactor(self) == EnactorLoop(self) \/ PullPlan(self) \/ WaitForLock(self)
-                    \/ LockAcquired(self) \/ GetActivePlan(self)
-                    \/ UpdatePlan(self) \/ LockRelease(self)
-                    \/ LockReleased(self) \/ DeleteOldPlans(self)
+                    \/ LockAcquired(self) \/ UpdatePlan(self)
+                    \/ LockRelease(self) \/ LockReleased(self)
+                    \/ DeleteOldPlans(self)
 
 (* Allow infinite stuttering to prevent deadlock on termination. *)
 Terminating == /\ \A self \in ProcSet: pc[self] = "Done"
