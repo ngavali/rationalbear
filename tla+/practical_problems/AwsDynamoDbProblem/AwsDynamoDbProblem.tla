@@ -187,5 +187,4 @@ DoNotDeleteRollbackPlan == rollbackPlan \notin { deletedPlans[dp] : dp \in 1..Le
 \*Both Active and BackUp plans are not deleted!!!
 Inv_ActiveAndRollbackNotDeleted == Inv_DoNotDeleteActivePlan \/ DoNotDeleteRollbackPlan
 
-
 =============================================================================
