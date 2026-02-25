@@ -13,7 +13,10 @@ variables
     rollbackPlan = NullPtr,
     activePlan = NullPtr,
     generatedPlans = <<>>,
-    enactorPlans = [ e \in Enactors |-> 0 ],
+    enactorPlans = [ e \in Enactors |-> [
+                        PrevEnacted |-> NullPtr, 
+                        WorkingOn |-> NullPtr 
+                   ]],
     enactedPlans = <<>>,
     deletedPlans = <<>>,
     mutex = {},
@@ -30,13 +33,12 @@ variables
     
     process Enactor \in Enactors 
     variables 
-        workingOnPlan = NullPtr
     begin
     EnactorLoop:
         while (TRUE) do
             PullPlan:
                 await generatedPlans # <<>>; 
-                workingOnPlan := Head(generatedPlans);
+                enactorPlans[self]["WorkingOn"] := Head(generatedPlans);
                 generatedPlans := Tail(generatedPlans);
             WaitForLock:
                 await mutex = {};
@@ -45,29 +47,30 @@ variables
                 skip;
             UpdatePlan:
                 rollbackPlan := activePlan;
-                activePlan := workingOnPlan;
-                enactorPlans[self] := workingOnPlan;
-                enactedPlans := Append(enactedPlans, workingOnPlan);
+                activePlan := enactorPlans[self]["WorkingOn"];
+                enactorPlans[self]["PrevEnacted"] := enactorPlans[self]["WorkingOn"];
+                enactedPlans := Append(enactedPlans, enactorPlans[self]["WorkingOn"]);
             LockRelease:
                 if mutex = {self} then
                     LockReleased:
                         mutex := {};
                 end if;
             DeleteOldPlans:
-                if enactedPlans # <<>> /\ workingOnPlan # NullPtr then
-                    deletedPlans := deletedPlans \o SelectSeq(enactedPlans, LAMBDA x: x <= (workingOnPlan - PLAN_THRESHOLD) );
-                    enactedPlans := SelectSeq(enactedPlans, LAMBDA x: x > (workingOnPlan - PLAN_THRESHOLD) );
+                if enactedPlans # <<>> /\ enactorPlans[self]["PrevEnacted"] # NullPtr then
+                    deletedPlans := deletedPlans \o SelectSeq(enactedPlans, LAMBDA x: x <= (enactorPlans[self]["PrevEnacted"] - PLAN_THRESHOLD) );
+                    enactedPlans := SelectSeq(enactedPlans, LAMBDA x: x > (enactorPlans[self]["PrevEnacted"] - PLAN_THRESHOLD) );
                 end if;
+                enactorPlans[self]["WorkingOn"] := NullPtr
         end while;
     end process;
 
 end algorithm; *)
-\* BEGIN TRANSLATION (chksum(pcal) = "acda1da9" /\ chksum(tla) = "7438021e")
+\* BEGIN TRANSLATION (chksum(pcal) = "6fc410d7" /\ chksum(tla) = "8967eea2")
 VARIABLES rollbackPlan, activePlan, generatedPlans, enactorPlans, 
-          enactedPlans, deletedPlans, mutex, pc, planId, workingOnPlan
+          enactedPlans, deletedPlans, mutex, pc, planId
 
 vars == << rollbackPlan, activePlan, generatedPlans, enactorPlans, 
-           enactedPlans, deletedPlans, mutex, pc, planId, workingOnPlan >>
+           enactedPlans, deletedPlans, mutex, pc, planId >>
 
 ProcSet == {"p1"} \cup (Enactors)
 
@@ -75,14 +78,15 @@ Init == (* Global variables *)
         /\ rollbackPlan = NullPtr
         /\ activePlan = NullPtr
         /\ generatedPlans = <<>>
-        /\ enactorPlans = [ e \in Enactors |-> 0 ]
+        /\ enactorPlans = [ e \in Enactors |-> [
+                               PrevEnacted |-> NullPtr,
+                               WorkingOn |-> NullPtr
+                          ]]
         /\ enactedPlans = <<>>
         /\ deletedPlans = <<>>
         /\ mutex = {}
         (* Process Planner *)
         /\ planId = 0
-        (* Process Enactor *)
-        /\ workingOnPlan = [self \in Enactors |-> NullPtr]
         /\ pc = [self \in ProcSet |-> CASE self = "p1" -> "GeneratePlan"
                                         [] self \in Enactors -> "EnactorLoop"]
 
@@ -91,8 +95,7 @@ GeneratePlan == /\ pc["p1"] = "GeneratePlan"
                 /\ generatedPlans' = Append(generatedPlans, planId')
                 /\ pc' = [pc EXCEPT !["p1"] = "GeneratePlan"]
                 /\ UNCHANGED << rollbackPlan, activePlan, enactorPlans, 
-                                enactedPlans, deletedPlans, mutex, 
-                                workingOnPlan >>
+                                enactedPlans, deletedPlans, mutex >>
 
 Planner == GeneratePlan
 
@@ -100,15 +103,15 @@ EnactorLoop(self) == /\ pc[self] = "EnactorLoop"
                      /\ pc' = [pc EXCEPT ![self] = "PullPlan"]
                      /\ UNCHANGED << rollbackPlan, activePlan, generatedPlans, 
                                      enactorPlans, enactedPlans, deletedPlans, 
-                                     mutex, planId, workingOnPlan >>
+                                     mutex, planId >>
 
 PullPlan(self) == /\ pc[self] = "PullPlan"
                   /\ generatedPlans # <<>>
-                  /\ workingOnPlan' = [workingOnPlan EXCEPT ![self] = Head(generatedPlans)]
+                  /\ enactorPlans' = [enactorPlans EXCEPT ![self]["WorkingOn"] = Head(generatedPlans)]
                   /\ generatedPlans' = Tail(generatedPlans)
                   /\ pc' = [pc EXCEPT ![self] = "WaitForLock"]
-                  /\ UNCHANGED << rollbackPlan, activePlan, enactorPlans, 
-                                  enactedPlans, deletedPlans, mutex, planId >>
+                  /\ UNCHANGED << rollbackPlan, activePlan, enactedPlans, 
+                                  deletedPlans, mutex, planId >>
 
 WaitForLock(self) == /\ pc[self] = "WaitForLock"
                      /\ mutex = {}
@@ -116,23 +119,23 @@ WaitForLock(self) == /\ pc[self] = "WaitForLock"
                      /\ pc' = [pc EXCEPT ![self] = "LockAcquired"]
                      /\ UNCHANGED << rollbackPlan, activePlan, generatedPlans, 
                                      enactorPlans, enactedPlans, deletedPlans, 
-                                     planId, workingOnPlan >>
+                                     planId >>
 
 LockAcquired(self) == /\ pc[self] = "LockAcquired"
                       /\ TRUE
                       /\ pc' = [pc EXCEPT ![self] = "UpdatePlan"]
                       /\ UNCHANGED << rollbackPlan, activePlan, generatedPlans, 
                                       enactorPlans, enactedPlans, deletedPlans, 
-                                      mutex, planId, workingOnPlan >>
+                                      mutex, planId >>
 
 UpdatePlan(self) == /\ pc[self] = "UpdatePlan"
                     /\ rollbackPlan' = activePlan
-                    /\ activePlan' = workingOnPlan[self]
-                    /\ enactorPlans' = [enactorPlans EXCEPT ![self] = workingOnPlan[self]]
-                    /\ enactedPlans' = Append(enactedPlans, workingOnPlan[self])
+                    /\ activePlan' = enactorPlans[self]["WorkingOn"]
+                    /\ enactorPlans' = [enactorPlans EXCEPT ![self]["PrevEnacted"] = enactorPlans[self]["WorkingOn"]]
+                    /\ enactedPlans' = Append(enactedPlans, enactorPlans'[self]["WorkingOn"])
                     /\ pc' = [pc EXCEPT ![self] = "LockRelease"]
                     /\ UNCHANGED << generatedPlans, deletedPlans, mutex, 
-                                    planId, workingOnPlan >>
+                                    planId >>
 
 LockRelease(self) == /\ pc[self] = "LockRelease"
                      /\ IF mutex = {self}
@@ -140,25 +143,25 @@ LockRelease(self) == /\ pc[self] = "LockRelease"
                            ELSE /\ pc' = [pc EXCEPT ![self] = "DeleteOldPlans"]
                      /\ UNCHANGED << rollbackPlan, activePlan, generatedPlans, 
                                      enactorPlans, enactedPlans, deletedPlans, 
-                                     mutex, planId, workingOnPlan >>
+                                     mutex, planId >>
 
 LockReleased(self) == /\ pc[self] = "LockReleased"
                       /\ mutex' = {}
                       /\ pc' = [pc EXCEPT ![self] = "DeleteOldPlans"]
                       /\ UNCHANGED << rollbackPlan, activePlan, generatedPlans, 
                                       enactorPlans, enactedPlans, deletedPlans, 
-                                      planId, workingOnPlan >>
+                                      planId >>
 
 DeleteOldPlans(self) == /\ pc[self] = "DeleteOldPlans"
-                        /\ IF enactedPlans # <<>> /\ workingOnPlan[self] # NullPtr
-                              THEN /\ deletedPlans' = deletedPlans \o SelectSeq(enactedPlans, LAMBDA x: x <= (workingOnPlan[self] - PLAN_THRESHOLD) )
-                                   /\ enactedPlans' = SelectSeq(enactedPlans, LAMBDA x: x > (workingOnPlan[self] - PLAN_THRESHOLD) )
+                        /\ IF enactedPlans # <<>> /\ enactorPlans[self]["PrevEnacted"] # NullPtr
+                              THEN /\ deletedPlans' = deletedPlans \o SelectSeq(enactedPlans, LAMBDA x: x <= (enactorPlans[self]["PrevEnacted"] - PLAN_THRESHOLD) )
+                                   /\ enactedPlans' = SelectSeq(enactedPlans, LAMBDA x: x > (enactorPlans[self]["PrevEnacted"] - PLAN_THRESHOLD) )
                               ELSE /\ TRUE
                                    /\ UNCHANGED << enactedPlans, deletedPlans >>
+                        /\ enactorPlans' = [enactorPlans EXCEPT ![self]["WorkingOn"] = NullPtr]
                         /\ pc' = [pc EXCEPT ![self] = "EnactorLoop"]
                         /\ UNCHANGED << rollbackPlan, activePlan, 
-                                        generatedPlans, enactorPlans, mutex, 
-                                        planId, workingOnPlan >>
+                                        generatedPlans, mutex, planId >>
 
 Enactor(self) == EnactorLoop(self) \/ PullPlan(self) \/ WaitForLock(self)
                     \/ LockAcquired(self) \/ UpdatePlan(self)
@@ -180,11 +183,15 @@ Termination == <>(\A self \in ProcSet: pc[self] = "Done")
 \* END TRANSLATION 
 
 \*Ensure we dont have inconsistent behavior in the process
+DeletedSet ==
+    { deletedPlans[i] : i \in 1..Len(deletedPlans) }
 \*Active Plan is not deleted!!!
-Inv_DoNotDeleteActivePlan == activePlan \notin { deletedPlans[dp] : dp \in 1..Len(deletedPlans) }
+ActivePlanDeleted == activePlan \in DeletedSet
 \*Rollback plan is not deleted!!!
-DoNotDeleteRollbackPlan == rollbackPlan \notin { deletedPlans[dp] : dp \in 1..Len(deletedPlans) }
-\*Both Active and BackUp plans are not deleted!!!
-Inv_ActiveAndRollbackNotDeleted == Inv_DoNotDeleteActivePlan \/ DoNotDeleteRollbackPlan
+RollbackPlanDeleted == rollbackPlan \in DeletedSet
+\*Both Active and BackUp plans are not deleted!!! System is recoverable!!!
+Inv_DontDeleteActivePlan == ~ActivePlanDeleted
 
+Inv_Recoverable ==
+    ~ ( ActivePlanDeleted /\ RollbackPlanDeleted )
 =============================================================================
