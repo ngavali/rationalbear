@@ -24,8 +24,10 @@ class _AboutScreenState extends State<AboutScreen> {
 
   String? currentVersion;
   int currentBuild = 0;
+  String? thisRelease;
   String? latestVersion;
   int latestBuild = 0;
+  String? latestRelease;
   String? downloadUrl;
 
   @override
@@ -39,12 +41,14 @@ class _AboutScreenState extends State<AboutScreen> {
     final info = await PackageInfo.fromPlatform();
     currentVersion = info.version;
     currentBuild = int.parse(info.buildNumber);
+    thisRelease = currentVersion! + "+" + info.buildNumber;
 
     final response = await http.get(Uri.parse(jsonUrl));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       latestVersion = data['version'];
       latestBuild = data['build'] != null ? data['build'] : latestBuild;
+      latestRelease = "$latestVersion+$latestBuild";
       downloadUrl = data['downloadUrl'];
       aboutData = data;
       loading = false;
@@ -134,11 +138,51 @@ class _AboutScreenState extends State<AboutScreen> {
                       children: [
                         Text(
                           aboutData!['appName'] ?? '',
-                          style: Theme.of(context).textTheme.titleLarge,
+                          style: Theme.of(context).textTheme.headlineMedium,
                         ),
-                        Text("Version: ${aboutData!['version'] ?? ''}"),
+                        Text("Version: ${thisRelease ?? ''}"),
                         SizedBox(height: 12),
-                        Text(aboutData!['description'] ?? ''),
+                        Text(
+                          aboutData!['description'] ?? '',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        if ((currentVersion != null &&
+                                latestVersion != null &&
+                                downloadUrl != null) &&
+                            ((currentVersion != latestVersion) ||
+                                (currentVersion == latestVersion &&
+                                    currentBuild < latestBuild)))
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'New version $latestRelease available!!!',
+                                style: TextStyle(color: Colors.green),
+                              ),
+                              ElevatedButton.icon(
+                                icon: Icon(Icons.system_update),
+                                label: Text('Download'),
+                                onPressed: () async {
+                                  final uri = Uri.parse(downloadUrl!);
+                                  if (await canLaunchUrl(uri)) {
+                                    await launchUrl(
+                                      uri,
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Could not open update link',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+
                         if ((aboutData?['features'] as List?) != null)
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,7 +190,7 @@ class _AboutScreenState extends State<AboutScreen> {
                               SizedBox(height: 20),
                               Text(
                                 "Features:",
-                                style: Theme.of(context).textTheme.titleMedium,
+                                style: Theme.of(context).textTheme.titleLarge,
                               ),
                               SizedBox(height: 8),
                               ...List<Widget>.from(
@@ -169,7 +213,11 @@ class _AboutScreenState extends State<AboutScreen> {
                                         Expanded(
                                           child: Text(
                                             feature,
-                                            style: TextStyle(fontSize: 16),
+                                            //            style: TextStyle(fontSize: 16),
+                                            style:
+                                                Theme.of(
+                                                  context,
+                                                ).textTheme.bodyLarge,
                                           ),
                                         ),
                                       ],
@@ -179,8 +227,8 @@ class _AboutScreenState extends State<AboutScreen> {
                               ),
                               SizedBox(height: 8),
                               Text(
-                                "Somethine is missing! Feel free to reach me at my email id.",
-                                style: Theme.of(context).textTheme.titleMedium,
+                                "Something is missing! Feel free to reach me at my email id.",
+                                style: Theme.of(context).textTheme.bodyLarge,
                               ),
                             ],
                           ),
@@ -204,7 +252,7 @@ class _AboutScreenState extends State<AboutScreen> {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          "Contact:",
+                          "Email:",
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         GestureDetector(
@@ -220,35 +268,6 @@ class _AboutScreenState extends State<AboutScreen> {
                             ),
                           ),
                         ),
-                        if (currentVersion != null &&
-                            latestVersion != null &&
-                            currentVersion != latestVersion &&
-                            currentBuild < latestBuild &&
-                            downloadUrl != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 24.0),
-                            child: ElevatedButton.icon(
-                              icon: Icon(Icons.system_update),
-                              label: Text('Download v$latestVersion'),
-                              onPressed: () async {
-                                final uri = Uri.parse(downloadUrl!);
-                                if (await canLaunchUrl(uri)) {
-                                  await launchUrl(
-                                    uri,
-                                    mode: LaunchMode.externalApplication,
-                                  );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Could not open update link',
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                            ),
-                          ),
                         SizedBox(height: 20),
                       ],
                     ),

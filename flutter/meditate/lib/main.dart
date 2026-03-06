@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:math';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meditate/app/meditation_settings.dart';
@@ -49,8 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<String> lastSessions = [];
 
   late Timer _timer;
-  double _opacityTopLeft = 0.0;
-  double _opacityBottomRight = 0.0;
+  //double _opacityTopLeft = 0.0;
+  //double _opacityBottomRight = 0.0;
 
   @override
   void initState() {
@@ -69,8 +67,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void _startSparkleAnimation() {
     _timer = Timer.periodic(Duration(seconds: 3), (timer) {
       setState(() {
-        _opacityTopLeft = Random().nextBool() ? 1.0 : 0.0;
-        _opacityBottomRight = Random().nextBool() ? 1.0 : 0.0;
+        //_opacityTopLeft = Random().nextBool() ? 1.0 : 0.0;
+        //_opacityBottomRight = Random().nextBool() ? 1.0 : 0.0;
       });
     });
   }
@@ -134,26 +132,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                     SizedBox(width: 20),
-                    /*
-                AnimatedIconButton(
-                  icon: Icons.account_circle,
-                  color: Colors.blueGrey,
-                  size: 60, // Use Material Icons
-                  label: 'Settings',
-                  onPressed:
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => MeditationSettingsScreen(),
-                        ),
-                      ),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                */
                     // Progress Icon
                     Column(
                       children: [
@@ -241,29 +219,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                /*
-                SizedBox(height: 20),
-                Text.rich(
-                  TextSpan(
-                    text: 'About',
-                    style: TextStyle(
-                      color: Colors.blue,
-                      decoration: TextDecoration.underline,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    recognizer:
-                        TapGestureRecognizer()
-                          ..onTap = () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const AboutScreen(),
-                              ),
-                            );
-                          },
-                  ),
-                ),
-                */
               ],
             ),
           ),

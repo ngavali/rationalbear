@@ -39,6 +39,7 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
       'label': 'Gamma (Cognition, Awareness)',
       'sound': 'gamma_beat',
     },
+    {'emoji': '', 'label': 'Custom', 'sount': ''},
   ];
   String selectedSound = 'night';
 
@@ -411,7 +412,7 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
                                     '${index + 1} min',
                                     style: TextStyle(
                                       fontSize: 18,
-                                      color: Colors.deepOrange,
+                                      color: Colors.redAccent,
                                     ),
                                   ),
                                 ),
@@ -439,7 +440,7 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
                           SizedBox(height: 10),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green.shade200,
+                              backgroundColor: Colors.blue.shade200,
                               foregroundColor: Colors.black,
                             ),
                             onPressed: () {
@@ -487,7 +488,7 @@ class _MeditationSettingsScreenState extends State<MeditationSettingsScreen> {
                           SizedBox(height: 10),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.indigo.shade200,
+                              backgroundColor: Colors.orange.shade200,
                               foregroundColor: Colors.black,
                             ),
                             onPressed: () {

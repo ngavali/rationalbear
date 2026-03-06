@@ -152,16 +152,6 @@ class _BreathControlScreenState extends State<BreathControlScreen>
       duration: Duration(seconds: 2),
     );
 
-    /*
-    //This shrinks the bubble 
-    closingSize = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(parent: closingController, curve: Curves.easeInOut),
-    );
-
-    closingOpacity = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(parent: closingController, curve: Curves.easeOut),
-    );
-    */
     startPreCountdown();
   }
 
@@ -175,10 +165,6 @@ class _BreathControlScreenState extends State<BreathControlScreen>
   }
 
   void triggerFinalAudioCue() async {
-    //print("Play exit sound");
-    //await _audioPlayer.stop();
-    //await _audioPlayer.play(AssetSource(cueFinal), volume: 1);
-
     final outroPlayer = AudioPlayer();
     await outroPlayer.play(AssetSource(cueFinal), volume: 0.8);
   }
@@ -315,7 +301,9 @@ class _BreathControlScreenState extends State<BreathControlScreen>
           int ti =
               wasStoppedByUser
                   ? 3
-                  : phaseDurations.skip(currentPhase).reduce((a, b) => a + b);
+                  : phaseDurations
+                      .skip(currentPhase + 1)
+                      .reduce((a, b) => a + b);
           //print("Closing in $ti");
           if (!wasStoppedByUser) triggerFinalAudioCue();
           Future.delayed(
@@ -725,7 +713,7 @@ class _BreathControlScreenState extends State<BreathControlScreen>
                           actualMeditationTime / (widget.sessionDuration * 60),
                       backgroundColor: getPhaseColor().withOpacity(0.2),
                       color: getPhaseColor(),
-                      minHeight: 2,
+                      minHeight: 10,
                     ),
                   ),
                   Align(
@@ -841,12 +829,6 @@ class _BreathControlScreenState extends State<BreathControlScreen>
                       ],
                     ),
                   ),
-                  /*
-                        ),
-                      );
-                    },
-                  ),
-                  */
                 ],
               ],
             ),
