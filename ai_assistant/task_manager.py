@@ -7,7 +7,6 @@ import uuid
 from datetime import datetime
 from db import get_connection
 
-
 def add_note(task_id, note):
     conn = get_connection()
     cursor = conn.cursor()
@@ -118,3 +117,21 @@ def delete_task(task_id):
     cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
     conn.commit()
     conn.close()
+
+def get_time_summary(start, end):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+SELECT t.title, SUM(ts.duration_seconds)
+FROM time_sessions ts
+JOIN tasks t ON ts.task_id = t.id
+WHERE ts.start_time BETWEEN ? AND ?
+GROUP BY ts.task_id, t.title
+ORDER BY SUM(ts.duration_seconds) DESC
+    """, (start.isoformat(), end.isoformat()))
+
+    rows = cursor.fetchall()
+    conn.close()
+
+    return rows

@@ -3,9 +3,102 @@
 import questionary
 from db import init_db
 from datetime import datetime
-from analytics import get_today_summary
+from questionary import Style
+from analytics import get_today_summary, get_date_range
 from timer import active_timer, start_timer, stop_timer, start_countdown, select_duration
-from task_manager import create_task, get_all_tasks, mark_task_done, delete_task, get_pending_tasks, add_note, get_notes
+from task_manager import create_task, get_all_tasks, mark_task_done, delete_task, get_pending_tasks, add_note, get_notes, get_time_summary
+
+import questionary
+from questionary import Style
+
+custom_style = Style([
+    ('qmark', 'fg:#8ecae6'),
+    ('question', 'fg:#e0fbfc bold'),
+    ('answer', 'fg:#90dbf4 bold'),
+    ('pointer', 'fg:#ffb703 bold'),
+    ('selected', 'fg:#fefeff bg:#1d1e1e'),
+    ('highlighted', 'fg:#a8dadc'),
+])
+
+def select(prompt, choices, default=None,allow_back=True):
+    if allow_back:
+        choices = ["< Back"] + choices
+
+    try:
+        answer = questionary.select(
+            prompt,
+            choices=choices,
+            default=default,
+            style=custom_style,
+        ).ask()
+
+        if answer == "< Back":
+            return None
+
+        return answer
+
+    except KeyboardInterrupt:
+        return None
+
+def confirm(prompt):
+    return questionary.confirm(
+        prompt,
+        style=custom_style
+    ).ask()
+
+
+def text(prompt):
+    return questionary.text(
+        prompt,
+        style=custom_style
+    ).ask()
+
+def select_summary_period():
+    return select("Select Summary Range:", [
+        "Day",
+        "Week",
+        "Month",
+        "Year"
+    ])
+
+def show_summary():
+    period = select_summary_period()
+
+    if period == None:
+        return
+
+    start, end = get_date_range(period)
+    data = get_time_summary(start, end)
+
+    print(f"\n📊 {period} Summary:\n")
+
+    total = 0
+
+    for title, seconds in data:
+        mins = seconds // 60
+        print(f"{title} → {mins} mins")
+        total += seconds
+
+    print(f"\nTotal: {total // 60} mins\n")
+
+def show_menu():
+    return select(
+        "What do you want to do?",
+        choices=[
+            "Add Task",
+            "View Tasks",
+            "Complete Task",
+            "Delete Task",
+            "Start Timer",
+            "Stop Timer",
+            "Countdown Timer",
+            "Summary",
+            "Add Note",
+            "View Notes",
+            "Exit"
+        ],
+        allow_back=False
+    )
 
 def select_task(filter_status=None, action="Select Task"):
     tasks = get_all_tasks()
@@ -20,15 +113,18 @@ def select_task(filter_status=None, action="Select Task"):
     choices = [
         questionary.Choice(
             title=f"{t[1]} ({t[3]} | {t[4]})",
-            value=(t[0], t[1])
+            value=(t[0], t[1]),
         )
         for t in tasks
     ]
 
-    result = questionary.select(
+    result = select(
         action,
         choices=choices
-    ).ask()
+    )
+
+    if result == None:
+        return (None, None)
 
     return result
 
@@ -47,84 +143,70 @@ def main():
     init_db()
 
     while True:
-        print("""
-1. Add Task
-2. View Tasks
-3. Complete Task
-4. Delete Task
-5. Start Timer
-6. Stop Timer
-7. Countdown Timer
-8. Today's Summary
-9. Add Note to Task
-10. View Task Notes
-11. Exit
-""")
+        choice = show_menu()
 
-        choice = input("Choose: ")
-
-        if choice == "1":
+        if choice == "Add Task":
             title = input("Title: ")
 
-            task_type = questionary.select(
+            task_type = select(
                 "Select Type:",
                 choices=["learning", "personal", "deep_work"]
-            ).ask()
+            )
 
-            priority = questionary.select(
+            priority = select(
                 "Select Priority:",
                 choices=["low", "medium", "high"],
                 default="medium"
-            ).ask()
+            )
 
-            energy = questionary.select(
+            energy = select(
                 "Select Energy:",
                 choices=["low", "medium", "high"]
-            ).ask()
+            )
 
             create_task(title, task_type=task_type,
                         priority=priority, energy=energy)
 
-        elif choice == "2":
+        elif choice == "View Tasks":
             tasks = get_all_tasks()
             print_tasks(tasks)
 
-        elif choice == "3":
+        elif choice == "Complete Task":
             task_id = select_task(filter_status="pending", action="Select task to complete")
             if not task_id:
                 continue
             mark_task_done(task_id)
 
-        elif choice == "4":
+        elif choice == "Delete Task":
             task_id = select_task(action="Select task to delete")
             if not task_id:
                 continue
-            confirm = questionary.confirm("Are you sure?").ask()
+            confirm = confirm("Are you sure?")
             if confirm:
                 delete_task(task_id)
 
-        elif choice == "5":
+        elif choice == "Start Timer":
             task_id, task_title = select_task(filter_status="pending", action="Select task to start timer")
             if not task_id:
                 continue
 
             start_timer(task_id, task_title)
 
-        elif choice == "6":
+        elif choice == "Stop Timer":
             print(f"Stopping timer for task: {task_id}")
             stop_timer()
 
-        elif choice == "7":
+        elif choice == "Countdown Timer":
             task_id, task_title = select_task(filter_status="pending", action="Select task for countdown")
             if not task_id:
                 continue
             minutes = int(select_duration())
             start_countdown(task_id, task_title, minutes)
 
-        elif choice == "8":
-            get_today_summary()
+        elif choice == "Summary":
+            show_summary()
 
-        elif choice == "9":
+        elif choice == "Add Note":
             task_id, task_title = select_task(action="Select task to add note")
 
             if task_id:
@@ -132,7 +214,7 @@ def main():
                 add_note(task_id, note)
                 print("✅ Note added")
 
-        elif choice == "10":
+        elif choice == "View Notes":
             task_id, task_title = select_task(action="Select task to view notes")
 
             if task_id:
@@ -148,7 +230,7 @@ def main():
 
                 print(50*"-")
 
-        elif choice == "11":
+        elif choice == "Exit":
             break
 
 if __name__ == "__main__":
