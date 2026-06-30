@@ -9,67 +9,27 @@ impl Solution {
         n: usize,
         memo: &mut Vec<Vec<i32>>,
     ) -> i32 {
-        println!("At position: {x},{y} limit ({m},{n})");
+        //println!("At position: {x},{y} limit ({m},{n})");
         if memo[x][y] != -1 {
             return memo[x][y];
         }
-        let mut min_hp = if (dungeon[x][y] == 0) {
-            1
-        } else {
-            dungeon[x][y]
-        };
-        //Base case
+        let mut min_hp = dungeon[x][y].min(1);
         if x == m - 1 && y == n - 1 {
-            let mut survival_health = 1;
-            if dungeon[x][y] < 0 {
-                survival_health = dungeon[x][y].abs() + 1;
-            }
-            println!("Survival health: {survival_health} at {x} {y}");
-            return survival_health;
+            return (1 - dungeon[x][y]).max(1);
         }
-
-        println!("Lets Move!!! {} {} {m},{n}", x + 1, y + 1);
         let mut gotit = false;
         if (x + 1 < m) {
-            println!("!!Go down!!");
-            let bottom = Self::dfs(dungeon, x + 1, y, m, n, memo);
-            println!("Recieved survival_health {bottom}");
-            println!("Health booster at this place {x},{y} is {}", dungeon[x][y]);
-            let survival_health = (bottom - dungeon[x][y]);
-            let survival_health = if survival_health < 1 {
-                1
-            } else {
-                survival_health
-            };
-
-            println!("survival_health to pass this cell is {survival_health}");
-
-            min_hp = survival_health;
+            min_hp = (Self::dfs(dungeon, x + 1, y, m, n, memo) - dungeon[x][y]).max(1);
             gotit = true;
         }
-        println!("Lets Move!!! {} {} {m},{n}", x + 1, y + 1);
         if (y + 1 < n) {
-            println!("!!Go right!!");
-            let right = Self::dfs(dungeon, x, y + 1, m, n, memo);
-            println!("Recieved survival_health {right}");
-            println!("Health booster at this place {x},{y} is {}", dungeon[x][y]);
-            let survival_health = (right - dungeon[x][y]);
-            let survival_health = if survival_health < 1 {
-                1
-            } else {
-                survival_health
-            };
-
-            println!("survival_health to pass this cell is {survival_health}");
-
+            let survival_health = (Self::dfs(dungeon, x, y + 1, m, n, memo) - dungeon[x][y]).max(1);
             if gotit {
                 min_hp = min_hp.min(survival_health);
             } else {
                 min_hp = survival_health;
             }
         }
-
-        println!("-- FINAL survival_health to pass this cell is {min_hp}");
         memo[x][y] = min_hp;
         min_hp
     }
