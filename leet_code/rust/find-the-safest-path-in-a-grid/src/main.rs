@@ -39,7 +39,85 @@ impl UnionSet {
 use std::collections::VecDeque;
 
 impl Solution {
-    pub fn maximum_safeness_factor(grid: Vec<Vec<i32>>) -> i32 {
+    fn maximum_safeness_factor_bfs_greedy(mut grid: Vec<Vec<i32>>) -> i32 {
+        let (m, n) = (grid.len(), grid[0].len());
+        if (grid[0][0] == 1 || grid[m - 1][n - 1] == 1) {
+            return 0;
+        }
+        let mut thief_cells = VecDeque::with_capacity(m * n);
+        for i in 0..m {
+            for j in 0..n {
+                if (grid[i][j] == 1) {
+                    thief_cells.push_back((i, j, 1));
+                    grid[i][j] = 0;
+                } else {
+                    grid[i][j] = -1;
+                }
+            }
+        }
+        let mut bfs_q = thief_cells;
+        while let Some((x, y, safeness_value)) = bfs_q.pop_front() {
+            if x + 1 < m && grid[x + 1][y] == -1 {
+                grid[x + 1][y] = safeness_value ;
+                bfs_q.push_back((x + 1, y, grid[x + 1][y] + 1));
+            }
+            if y + 1 < n && grid[x][y + 1] == -1 {
+                grid[x][y + 1] = safeness_value ;
+                bfs_q.push_back((x, y + 1, grid[x][y + 1] + 1));
+            }
+            if x > 0 && grid[x - 1][y] == -1 {
+                grid[x - 1][y] = safeness_value ;
+                bfs_q.push_back((x - 1, y, grid[x - 1][y] + 1));
+            }
+            if y > 0 && grid[x][y - 1] == -1 {
+                grid[x][y - 1] = safeness_value ;
+                bfs_q.push_back((x, y - 1, grid[x][y - 1] + 1));
+            }
+        }
+        let mut min_safeness_factor = grid[0][0];
+        bfs_q.push_back((0, 0, grid[0][0]));
+        while let Some((x, y, safeness_value)) = bfs_q.pop_front() {
+            min_safeness_factor = min_safeness_factor.min(safeness_value);
+            if (x + 1 == m) && (y + 1 == n) {
+                break;
+            }
+            if x + 1 < m && grid[x + 1][y] != -1 {
+                if min_safeness_factor > grid[x + 1][y] {
+                    bfs_q.push_back((x + 1, y, grid[x + 1][y]));
+                } else {
+                    bfs_q.push_front((x + 1, y, grid[x + 1][y]));
+                }
+                grid[x + 1][y] = -1;
+            }
+            if y + 1 < n && grid[x][y + 1] != -1 {
+                if min_safeness_factor > grid[x][y + 1] {
+                    bfs_q.push_back((x, y + 1, grid[x][y + 1]));
+                } else {
+                    bfs_q.push_front((x, y + 1, grid[x][y + 1]));
+                }
+                grid[x][y + 1] = -1;
+            }
+            if x > 0 && grid[x - 1][y] != -1 {
+                if min_safeness_factor > grid[x - 1][y] {
+                    bfs_q.push_back((x - 1, y, grid[x - 1][y]));
+                } else {
+                    bfs_q.push_front((x - 1, y, grid[x - 1][y]));
+                }
+                grid[x - 1][y] = -1;
+            }
+            if y > 0 && grid[x][y - 1]  != -1  {
+                if min_safeness_factor > grid[x][y - 1] {
+                    bfs_q.push_back((x, y - 1, grid[x][y - 1]));
+                } else {
+                    bfs_q.push_front((x, y - 1, grid[x][y - 1]));
+                }
+                grid[x][y - 1] = -1;
+            }
+        }
+        min_safeness_factor
+    }
+
+    fn maximum_safeness_factor_union(grid: Vec<Vec<i32>>) -> i32 {
         let (m, n) = (grid.len(), grid[0].len());
 
         if grid[0][0] == 1 || grid[m - 1][n - 1] == 1 {
@@ -114,6 +192,10 @@ impl Solution {
         }
         0
     }
+
+    pub fn maximum_safeness_factor(grid: Vec<Vec<i32>>) -> i32 {
+        Self::maximum_safeness_factor_bfs_greedy(grid)
+    }
 }
 
 fn main() {
@@ -141,7 +223,7 @@ mod tests {
     }
 
     #[test]
-    fn test_calculate_minimum_hp() {
+    fn test_maximum_safeness_factor() {
         for (i, (grid, want)) in testcases().into_iter().enumerate() {
             println!("---- Testcase #{i} ----");
             let got = Solution::maximum_safeness_factor(grid);
